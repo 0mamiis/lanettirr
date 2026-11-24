@@ -1,0 +1,114 @@
+{
+  "dedupe": true,
+  "sort": "speed",
+  "minRes": 480,
+  "hidden": [
+    "WioCinema • ClipBox",
+    "WioCinema • CineStream",
+    "WioCinema • Mapple",
+    "WioCinema • BingeBang",
+    "WioCinema • CineCat",
+    "WioCinema • FlixNetwork",
+    "WioCinema • Watch2Movies",
+    "WioCinema • 7Reels",
+    "WioCinema • Velarium",
+    "WioCinema • Newtane"
+  ],
+  "nuvioRepos": [
+    {
+      "url": "https://raw.githubusercontent.com/falsisdev/anthology/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/patr0nq/nuvioaddons/refs/heads/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/manitux-app/nuvio-plugins/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://izlelan.com/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/fmustafayaman/turkish-nuvio/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/ttuloglu/nuvio-tr-plugins/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/Wiojelt/Nuvio-Addons/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/Wiojelt/Nuvio-Addons/main/wiocinema/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/Wekmed/nuvio/refs/heads/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/mooncrown04/nuviotr/refs/heads/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/kratoskrator/dizibox-nuvio/HEAD/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/kratoskrator/diziyou-nuvio/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/kratoskrator/hdfilmcehennemi-nuvio/HEAD/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pnthancyb/hans-mega/main/manifest.json",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/F0Rextasy/bigbullapp-cs/master/nuvio/manifest.json",
+      "enabled": true
+    }
+  ],
+  "torrentlio": {
+    "enabled": true,
+    "mode": "mux",
+    "maxDubs": 12,
+    "base": "https://torrentio.strem.fun",
+    "providers": [
+      "yts",
+      "eztv",
+      "rarbg",
+      "1337x",
+      "thepiratebay",
+      "kickasstorrents",
+      "torrentgalaxy",
+      "magnetdl",
+      "horriblesubs",
+      "nyaasi",
+      "tokyotosho",
+      "rutor",
+      "rutracker",
+      "comando",
+      "bludv",
+      "micoleaodublado",
+      "torrent9",
+      "ilcorsaronero",
+      "mejortorrent",
+      "wolfmax4k",
+      "cinecalidad",
+      "besttorrents"
+    ],
+    "sort": "seeders",
+    "qualityfilter": [],
+    "limit": 0,
+    "maxStreams": 100,
+    "language": "turkish"
+  }
+}
