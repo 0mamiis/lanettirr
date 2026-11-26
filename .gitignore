@@ -18,3 +18,4 @@ run-loop-*.ps1
 cloudflared.exe
 mega-bridge/saved-config.json
 mega-bridge/blacklist.json
+cs3-plugin/build/

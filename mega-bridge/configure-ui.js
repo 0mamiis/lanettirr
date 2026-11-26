@@ -596,6 +596,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
         '<div class="seg" role="group" data-i18n-aria="installTypeAria" aria-label="' + esc(tr('installTypeAria')) + '">' +
           '<button type="button" data-install="nuvio" class="is-active" data-i18n="instNuvio">' + esc(tr('instNuvio')) + '</button>' +
           '<button type="button" data-install="aio" data-i18n="instAio">' + esc(tr('instAio')) + '</button>' +
+          '<button type="button" data-install="cs3" data-i18n="instCs3">' + esc(tr('instCs3')) + '</button>' +
         '</div>' +
       '</div>' +
       '<div class="panel-body">' +
@@ -619,7 +620,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
           '</button>' +
           '<a class="btn btn-flat hidden" id="stremioBtn" href="#">' +
             '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3H3v10h10v-3"/><path d="M9 2h5v5"/><path d="M14 2L7 9"/></svg>' +
-            '<span data-i18n="stremioBtn">' + esc(tr('stremioBtn')) + '</span>' +
+            '<span id="stremioBtnLbl" data-i18n="stremioBtn">' + esc(tr('stremioBtn')) + '</span>' +
           '</a>' +
           '<span class="status" id="status"></span>' +
         '</div>' +
@@ -995,6 +996,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      c.textContent = code.toUpperCase() + " Hub";' +
     '      previewChips.appendChild(c);' +
     '    });' +
+    '  } else if (installMode === "cs3") {' +
+    '    previewHint.textContent = t("previewCs3");' +
+    '    const c = document.createElement("span"); c.className = "p-chip"; c.textContent = "CloudStream 3 (" + dispLangs.map(x => x.toUpperCase()).join("+") + ")"; previewChips.appendChild(c);' +
     '  } else {' +
     '    previewHint.textContent = t("previewAio");' +
     '    const c = document.createElement("span"); c.className = "p-chip"; c.textContent = "Stremio (" + dispLangs.map(x => x.toUpperCase()).join("+") + ")"; previewChips.appendChild(c);' +
@@ -1047,11 +1051,13 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  }' +
     '  const cfg = parts.join("&");' +
     '  lastCfgStr = cfg;' +
-    '  const url = linkMode === "saved" ? (installMode === "nuvio" ? (ORIGIN + "/saved/nuvio-repo/manifest.json") : (ORIGIN + "/saved/manifest.json")) : (installMode === "nuvio" ? (ORIGIN + "/c/" + encodeURIComponent(cfg) + "/nuvio-repo/manifest.json") : (ORIGIN + "/c/" + encodeURIComponent(cfg + "&mode=direct") + "/manifest.json"));' +
+    '  const url = linkMode === "saved" ? (installMode === "nuvio" ? (ORIGIN + "/saved/nuvio-repo/manifest.json") : (installMode === "cs3" ? (ORIGIN + "/saved/cs3/repo.json") : (ORIGIN + "/saved/manifest.json"))) : (installMode === "nuvio" ? (ORIGIN + "/c/" + encodeURIComponent(cfg) + "/nuvio-repo/manifest.json") : (installMode === "cs3" ? (ORIGIN + "/c/" + encodeURIComponent(cfg) + "/cs3/repo.json") : (ORIGIN + "/c/" + encodeURIComponent(cfg + "&mode=direct") + "/manifest.json")));' +
     '  document.getElementById("saveBtn").classList.toggle("hidden", linkMode !== "saved");' +
     '  out.textContent = url;' +
     '  sbtn.classList.toggle("hidden", installMode === "nuvio");' +
-    '  sbtn.href = "stremio://" + url.replace("https://", "").replace("http://", "");' +
+    '  const sbtnLbl = document.getElementById("stremioBtnLbl");' +
+    '  if (sbtnLbl) sbtnLbl.textContent = t(installMode === "cs3" ? "cs3Btn" : "stremioBtn");' +
+    '  sbtn.href = (installMode === "cs3" ? "cloudstreamrepo://" : "stremio://") + url.replace("https://", "").replace("http://", "");' +
     '}' +
     'function renderAll(persistLocal) {' +
     '  syncControlStates();' +
@@ -1201,7 +1207,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  const uiRaw = localStorage.getItem(UI_PREFS_KEY);' +
     '  const uiSrc = uiRaw ? JSON.parse(uiRaw) : JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");' +
     '  if (uiSrc && typeof uiSrc === "object") {' +
-    '    if (uiSrc.installMode === "nuvio" || uiSrc.installMode === "aio") { installMode = uiSrc.installMode; document.querySelectorAll(".seg button[data-install]").forEach(x => x.classList.toggle("is-active", x.dataset.install === installMode)); }' +
+    '    if (uiSrc.installMode === "nuvio" || uiSrc.installMode === "aio" || uiSrc.installMode === "cs3") { installMode = uiSrc.installMode; document.querySelectorAll(".seg button[data-install]").forEach(x => x.classList.toggle("is-active", x.dataset.install === installMode)); }' +
     '    if (uiSrc.linkMode === "saved" || uiSrc.linkMode === "inline") { linkMode = uiSrc.linkMode; document.querySelectorAll(".seg button[data-linkmode]").forEach(x => x.classList.toggle("is-active", x.dataset.linkmode === linkMode)); }' +
     '    if (typeof uiSrc.uiLang === "string") uiLangPref = uiSrc.uiLang;' +
     '  }' +

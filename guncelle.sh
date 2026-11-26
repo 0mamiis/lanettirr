@@ -133,6 +133,7 @@ else
     for f in index.js configure-ui.js configure-i18n.js badges-custom.json lang-repos.json package.json package-lock.json VERSION; do
       if [ -f "$SRC_ROOT/mega-bridge/$f" ]; then cp -f "$SRC_ROOT/mega-bridge/$f" "$ROOT/$f"; fi
     done
+    if [ -f "$SRC_ROOT/mega-bridge/cs3/classes.dex" ]; then mkdir -p "$ROOT/cs3" && cp -f "$SRC_ROOT/mega-bridge/cs3/classes.dex" "$ROOT/cs3/classes.dex"; fi
     if [ -f "$SRC_ROOT/guncelle.sh" ]; then cp -f "$SRC_ROOT/guncelle.sh" "$ROOT/guncelle.sh" && chmod +x "$ROOT/guncelle.sh"; fi
   else
     (cd "$SRC_ROOT" && find . -type f) | while IFS= read -r rel; do

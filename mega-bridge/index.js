@@ -4073,6 +4073,200 @@ function startSelfUpdate(targetVersion) {
   }
 }
 
+// ---- CloudStream 3 (.cs3) Self-Hosted Repository & Bridge ----
+const CS3_DEX_PATH = path.join(__dirname, "cs3", "classes.dex");
+let cs3DexCache = null;
+const cs3PkgCache = new Map();
+let cs3IconPngCache = null;
+
+const CS3_CRC32_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+
+function cs3Crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) c = CS3_CRC32_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function buildDeterministicZip(entries) {
+  const locals = [];
+  const centrals = [];
+  let offset = 0;
+  const dosTime = 0x0000;
+  const dosDate = 0x5421;
+  for (const ent of entries) {
+    const nameBuf = Buffer.from(ent.name, "utf8");
+    const dataBuf = Buffer.isBuffer(ent.data) ? ent.data : Buffer.from(ent.data);
+    const crc = cs3Crc32(dataBuf);
+    const size = dataBuf.length;
+    const lh = Buffer.alloc(30 + nameBuf.length);
+    lh.writeUInt32LE(0x04034b50, 0);
+    lh.writeUInt16LE(20, 4);
+    lh.writeUInt16LE(0x0800, 6);
+    lh.writeUInt16LE(0, 8);
+    lh.writeUInt16LE(dosTime, 10);
+    lh.writeUInt16LE(dosDate, 12);
+    lh.writeUInt32LE(crc, 14);
+    lh.writeUInt32LE(size, 18);
+    lh.writeUInt32LE(size, 22);
+    lh.writeUInt16LE(nameBuf.length, 26);
+    lh.writeUInt16LE(0, 28);
+    nameBuf.copy(lh, 30);
+    locals.push(lh, dataBuf);
+    const ch = Buffer.alloc(46 + nameBuf.length);
+    ch.writeUInt32LE(0x02014b50, 0);
+    ch.writeUInt16LE(20, 4);
+    ch.writeUInt16LE(20, 6);
+    ch.writeUInt16LE(0x0800, 8);
+    ch.writeUInt16LE(0, 10);
+    ch.writeUInt16LE(dosTime, 12);
+    ch.writeUInt16LE(dosDate, 14);
+    ch.writeUInt32LE(crc, 16);
+    ch.writeUInt32LE(size, 20);
+    ch.writeUInt32LE(size, 24);
+    ch.writeUInt16LE(nameBuf.length, 28);
+    ch.writeUInt16LE(0, 30);
+    ch.writeUInt16LE(0, 32);
+    ch.writeUInt16LE(0, 34);
+    ch.writeUInt16LE(0, 36);
+    ch.writeUInt32LE(0, 38);
+    ch.writeUInt32LE(offset, 42);
+    nameBuf.copy(ch, 46);
+    centrals.push(ch);
+    offset += lh.length + dataBuf.length;
+  }
+  const cdBuf = Buffer.concat(centrals);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(0, 4);
+  eocd.writeUInt16LE(0, 6);
+  eocd.writeUInt16LE(entries.length, 8);
+  eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(cdBuf.length, 12);
+  eocd.writeUInt32LE(offset, 16);
+  eocd.writeUInt16LE(0, 20);
+  return Buffer.concat([...locals, cdBuf, eocd]);
+}
+
+function buildCs3IconPng() {
+  if (cs3IconPngCache) return cs3IconPngCache;
+  const w = 64, h = 64;
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) {
+    const row = y * (w * 4 + 1);
+    raw[row] = 0;
+    for (let x = 0; x < w; x++) {
+      const p = row + 1 + x * 4;
+      const dx = Math.abs(x - 31.5), dy = Math.abs(y - 31.5);
+      const corner = Math.max(0, dx - 20) ** 2 + Math.max(0, dy - 20) ** 2;
+      if (corner > 144) { raw[p] = 0; raw[p+1] = 0; raw[p+2] = 0; raw[p+3] = 0; continue; }
+      const inL = (x >= 20 && x <= 29 && y >= 15 && y <= 49) || (x >= 20 && x <= 45 && y >= 40 && y <= 49);
+      if (inL) { raw[p] = 248; raw[p+1] = 250; raw[p+2] = 252; raw[p+3] = 255; }
+      else {
+        const t = (x + y) / (w + h);
+        raw[p] = Math.round(18 + t * 38);
+        raw[p+1] = Math.round(24 + t * 44);
+        raw[p+2] = Math.round(58 + t * 145);
+        raw[p+3] = 255;
+      }
+    }
+  }
+  const chunk = (type, data) => {
+    const tBuf = Buffer.from(type, "ascii");
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(cs3Crc32(Buffer.concat([tBuf, data])), 0);
+    return Buffer.concat([len, tBuf, data, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  cs3IconPngCache = Buffer.concat([sig, chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+  return cs3IconPngCache;
+}
+
+function cs3VersionInt() {
+  const v = String(getLocalVersion() || "1.0.0").replace(/^v/i, "").split(".").map(n => parseInt(n, 10) || 0);
+  const num = (v[0] || 0) * 10000 + (v[1] || 0) * 100 + (v[2] || 0);
+  return num > 0 ? num : 1;
+}
+
+function cs3LangCode(langs) {
+  if (!Array.isArray(langs) || langs.length !== 1) return "uni";
+  const raw = String(langs[0] || "").toLowerCase().trim();
+  if (!raw) return "uni";
+  if (raw === "yue") return "zh";
+  const base = raw.split(/[_-]/)[0];
+  return /^[a-z]{2,3}$/.test(base) ? base : "uni";
+}
+
+function loadCs3DexBuffer() {
+  try {
+    const st = fs.statSync(CS3_DEX_PATH);
+    if (cs3DexCache && cs3DexCache.mtimeMs === st.mtimeMs && cs3DexCache.size === st.size) return cs3DexCache.buf;
+    const buf = fs.readFileSync(CS3_DEX_PATH);
+    cs3DexCache = { mtimeMs: st.mtimeMs, size: st.size, buf };
+    cs3PkgCache.clear();
+    return buf;
+  } catch { return null; }
+}
+
+function escapeJavaPropValue(v) {
+  return String(v || "").replace(/[\r\n]+/g, "").replace(/\\/g, "\\\\");
+}
+
+function buildCs3Package(baseUrl, cfg) {
+  const dexBuf = loadCs3DexBuffer();
+  if (!dexBuf) return null;
+  const ordered = orderHubLangs(cfg);
+  const lang = cs3LangCode(ordered);
+  const ver = cs3VersionInt();
+  const cleanBase = String(baseUrl || "").replace(/\/+$/, "");
+  const key = cleanBase + "|" + lang + "|" + ver;
+  const hit = cs3PkgCache.get(key);
+  if (hit) return hit;
+  const manifestJson = JSON.stringify({
+    name: "Lanettirr",
+    pluginClassName: "com.lanettirr.LanettirrPlugin",
+    requiresResources: false,
+    version: ver,
+  }, null, 2);
+  const propsText = [
+    "baseUrl=" + escapeJavaPropValue(cleanBase),
+    "lang=" + escapeJavaPropValue(lang),
+    "name=Lanettirr",
+  ].join("\n") + "\n";
+  const zipBuf = buildDeterministicZip([
+    { name: "classes.dex", data: dexBuf },
+    { name: "manifest.json", data: Buffer.from(manifestJson, "utf8") },
+    { name: "lanettirr.properties", data: Buffer.from(propsText, "utf8") },
+  ]);
+  cs3PkgCache.set(key, zipBuf);
+  capMap(cs3PkgCache, 64);
+  return zipBuf;
+}
+
+function cs3QualityInt(resLabel) {
+  const m = String(resLabel || "").match(/(\d{3,4})p/i);
+  if (m) return parseInt(m[1], 10) || 400;
+  if (/4k|uhd/i.test(String(resLabel || ""))) return 2160;
+  if (/2k/i.test(String(resLabel || ""))) return 1440;
+  return 400;
+}
+
+function cs3LinkType(urlStr, isHls) {
+  const u = String(urlStr || "");
+  if (isHls || /\.m3u8(?:\?|$)/i.test(u)) return "M3U8";
+  if (/\.mpd(?:\?|$)/i.test(u)) return "DASH";
+  return "VIDEO";
+}
+
 const server = http.createServer(async (req, res) => {
  try {
   if (req.method === 'OPTIONS') {
@@ -4110,7 +4304,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const saved = saveConfigStr(parsed.cfg);
-      json(res, 200, { ok: true, cfg: saved, url: origin + "/saved/nuvio-repo/manifest.json", stremioUrl: origin + "/saved/manifest.json" });
+      json(res, 200, { ok: true, cfg: saved, url: origin + "/saved/nuvio-repo/manifest.json", stremioUrl: origin + "/saved/manifest.json", cs3Url: origin + "/saved/cs3/repo.json" });
     } catch (e) {
       json(res, e?.status || 400, { ok: false, error: e?.message || "Bad request" });
     }
@@ -4283,6 +4477,148 @@ const server = http.createServer(async (req, res) => {
 
   if (routeUrl === "/nuvio-repo/manifest.json") {
     json(res, 200, buildNuvioRepoManifest(cfg));
+    return;
+  }
+
+  if (routeUrl === "/cs3/icon.png" && (req.method === "GET" || req.method === "HEAD")) {
+    const png = buildCs3IconPng();
+    res.writeHead(200, { "Content-Type": "image/png", "Content-Length": png.length, "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400" });
+    res.end(req.method === "HEAD" ? undefined : png);
+    return;
+  }
+
+  if (routeUrl === "/cs3/repo.json" && (req.method === "GET" || req.method === "HEAD")) {
+    const cs3Prefix = routePrefix || "/saved";
+    const payload = {
+      iconUrl: origin + "/cs3/icon.png",
+      name: "Lanettirr",
+      description: "Self-hosted Lanettirr multi-language VOD bridge for CloudStream 3",
+      manifestVersion: 1,
+      pluginLists: [origin + cs3Prefix + "/cs3/plugins.json"],
+    };
+    const body = Buffer.from(JSON.stringify(payload, null, 2), "utf8");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Content-Length": body.length, "Access-Control-Allow-Origin": "*", "Cache-Control": "no-cache" });
+    res.end(req.method === "HEAD" ? undefined : body);
+    return;
+  }
+
+  if (routeUrl === "/cs3/plugins.json" && (req.method === "GET" || req.method === "HEAD")) {
+    const cs3Prefix = routePrefix || "/saved";
+    const effCfg = routePrefix ? cfg : parseConfig(loadSavedConfigStr());
+    const orderedLangs = orderHubLangs(effCfg);
+    const pkg = buildCs3Package(origin + cs3Prefix, effCfg);
+    const payload = [{
+      url: origin + cs3Prefix + "/cs3/Lanettirr.cs3",
+      status: pkg ? 1 : 0,
+      version: cs3VersionInt(),
+      apiVersion: 1,
+      name: "Lanettirr",
+      internalName: "Lanettirr",
+      authors: ["Lanettirr"],
+      description: "Lanettirr self-hosted multi-language VOD bridge (" + orderedLangs.map(x => x.toUpperCase()).join(", ") + ")",
+      repositoryUrl: "https://github.com/0mamiis/lanettirr",
+      tvTypes: ["Movie", "TvSeries", "Anime", "AnimeMovie", "AsianDrama"],
+      language: cs3LangCode(orderedLangs),
+      iconUrl: origin + "/cs3/icon.png",
+      fileSize: pkg ? pkg.length : 0,
+    }];
+    const body = Buffer.from(JSON.stringify(payload, null, 2), "utf8");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Content-Length": body.length, "Access-Control-Allow-Origin": "*", "Cache-Control": "no-cache" });
+    res.end(req.method === "HEAD" ? undefined : body);
+    return;
+  }
+
+  if (/^\/cs3\/lanettirr\.cs3$/i.test(routeUrl) && (req.method === "GET" || req.method === "HEAD")) {
+    const cs3Prefix = routePrefix || "/saved";
+    const effCfg = routePrefix ? cfg : parseConfig(loadSavedConfigStr());
+    const pkg = buildCs3Package(origin + cs3Prefix, effCfg);
+    if (!pkg) { json(res, 503, { error: "CS3 classes.dex not found" }); return; }
+    res.writeHead(200, {
+      "Content-Type": "application/zip",
+      "Content-Disposition": 'attachment; filename="Lanettirr.cs3"',
+      "Content-Length": pkg.length,
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "no-cache",
+    });
+    res.end(req.method === "HEAD" ? undefined : pkg);
+    return;
+  }
+
+  if (routeUrl === "/cs3/streams" && req.method === "GET") {
+    await ensureProviders();
+    try {
+      const q = new URL(req.url, origin).searchParams;
+      const mt = (q.get("type") || "movie").toLowerCase();
+      const stType = (mt === "tv" || mt === "series") ? "series" : "movie";
+      const tmdb = (q.get("tmdb") || "").trim();
+      const imdb = (q.get("imdb") || "").trim();
+      const se = parseInt(q.get("s") || "1", 10) || 1;
+      const ep = parseInt(q.get("e") || "1", 10) || 1;
+      if (!tmdb && !imdb) { json(res, 200, { streams: [], subtitles: [] }); return; }
+      const effCfg = routePrefix ? cfg : parseConfig(loadSavedConfigStr());
+      const orderedLangs = orderHubLangs(effCfg);
+      const idBase = tmdb ? ("tmdb:" + tmdb) : imdb;
+      const sid = stType === "series" ? (idBase + ":" + se + ":" + ep) : idBase;
+      const mediaKey = stType + "|" + sid;
+      const list = await getStreamsCached(stType, sid, orderedLangs, effCfg.timeoutSec, effCfg.disabledRepos, effCfg.disabledProvs);
+      const picked = await enrichAndApplyStreamControls(list, effCfg, stType === "series", { slug: orderedLangs.length === 1 ? orderedLangs[0] : "", mediaKey });
+      let planId = null;
+      if (effCfg.failover && picked.length) {
+        planId = "p_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+        const allVer = Array.isArray(picked._allVerified) ? picked._allVerified : picked;
+        const toCand = (x) => ({ url: x.url, headers: x.behaviorHints?.proxyHeaders?.request || {}, isHls: !!x._needsProxy || isLikelyHlsUrl(x.url), provider: streamProviderName(x), res: x._realRes || detectResolution(x.name) || "720p" });
+        const slots = picked.map(prim => {
+          const pRes = prim._realRes || detectResolution(prim.name) || "720p";
+          const pRank = RES_RANK[pRes] ?? 3;
+          const rest = allVer.filter(x => x.url !== prim.url).slice().sort((a, b) => {
+            const ra = RES_RANK[a._realRes || detectResolution(a.name) || "720p"] ?? 3;
+            const rb = RES_RANK[b._realRes || detectResolution(b.name) || "720p"] ?? 3;
+            return Math.abs(ra - pRank) - Math.abs(rb - pRank);
+          }).slice(0, 12);
+          return [toCand(prim), ...rest.map(toCand)];
+        });
+        const cacheType = stType === "series" ? "tv" : "movie";
+        const tc = titleCache.get(cacheType + ":" + (tmdb || imdb)) || titleCache.get(cacheType + ":" + sid);
+        const tName = typeof tc === "string" ? tc : (tc?.title || tc?.name || q.get("title") || sid);
+        const mediaLabel = tName + (stType === "series" ? (" S" + se + "E" + ep) : "");
+        playPlans.set(planId, { t: Date.now(), mediaKey, mediaLabel, lang: orderedLangs[0] || "", fbto: effCfg.failoverSec || 15, slots });
+        capMap(playPlans, 200);
+      }
+      const subSeen = new Set();
+      const cs3Subs = [];
+      const cs3Streams = picked.map((s, idx) => {
+        if (Array.isArray(s.subtitles)) {
+          for (const sb of s.subtitles) {
+            const su = String(sb && sb.url || "").trim();
+            if (!su || subSeen.has(su)) continue;
+            subSeen.add(su);
+            cs3Subs.push({ lang: String(sb.lang || sb.label || "Subtitle"), url: su });
+          }
+        }
+        const disp = buildVerifiedStreamDisplay(s, "Lanettirr");
+        const reqHdrs = s.behaviorHints?.proxyHeaders?.request || {};
+        const isHlsPlay = !!s._needsProxy || isLikelyHlsUrl(s.url);
+        const finalUrl = planId ? (origin + "/play/" + planId + "/" + idx + (isHlsPlay ? "/s.m3u8" : "/s.mp4")) : (s._needsProxy ? proxyUrl(origin, s.url, reqHdrs, "s.m3u8", s._hubLang || orderedLangs[0] || "") : s.url);
+        const directHdrs = (planId || s._needsProxy) ? {} : reqHdrs;
+        const ref = directHdrs.Referer || directHdrs.referer || "";
+        const line1 = String(disp.title || "").split("\n")[0] || disp.res || "";
+        const label = [disp.name, line1].filter(Boolean).join(" · ");
+        return {
+          source: disp.name || "Lanettirr",
+          name: label || disp.name || "Lanettirr",
+          url: finalUrl,
+          referer: ref,
+          quality: cs3QualityInt(disp.res || s._realRes || detectResolution(s.name)),
+          type: cs3LinkType(finalUrl, isHlsPlay),
+          headers: directHdrs,
+        };
+      });
+      json(res, 200, { streams: cs3Streams, subtitles: cs3Subs });
+      console.log("[CS3] " + mediaKey + " langs=" + orderedLangs.join(",") + " streams=" + cs3Streams.length + " fb=" + (effCfg.failover ? ("1(" + effCfg.failoverSec + "s)") : "0"));
+    } catch (e) {
+      console.error("CS3 streams error:", e.message);
+      json(res, 200, { streams: [], subtitles: [] });
+    }
     return;
   }
 
@@ -4501,6 +4837,7 @@ const onListen = async () => {
   console.log(`  ✅  Nuvio Repo   : http://${dispHost}:${PORT}/saved/nuvio-repo/manifest.json`);
   console.log(`  ✅  Badges JSON  : http://${dispHost}:${PORT}/badges.json`);
   console.log(`  ✅  Stremio      : http://${dispHost}:${PORT}/saved/manifest.json`);
+  console.log(`  ✅  CloudStream  : http://${dispHost}:${PORT}/saved/cs3/repo.json`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 };
 if (HOST) server.listen(PORT, HOST, onListen);

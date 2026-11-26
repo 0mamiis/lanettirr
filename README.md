@@ -1,6 +1,6 @@
 # lanettirr
 
-Self-hosted **Lanettirr (Mega Bridge)** + **TR Hub** + **EN Hub** package — brings hundreds of torrent-free VOD sources across 48 languages to **Nuvio** and **Stremio / AIOStreams** with real `ffprobe` stream verification, automatic failover, and custom badges.
+Self-hosted **Lanettirr (Mega Bridge)** + **TR Hub** + **EN Hub** package — brings hundreds of torrent-free VOD sources across 48 languages to **Nuvio**, **CloudStream (CS3)**, and **Stremio / AIOStreams** with real `ffprobe` stream verification, automatic failover, and custom badges.
 
 Repository: https://github.com/0mamiis/lanettirr
 
@@ -63,6 +63,16 @@ To use Lanettirr with Stremio, AIOStreams, or any Stremio-compatible client:
 
 - **Stremio Manifest**: `http://127.0.0.1:3001/saved/manifest.json`
 
+### 5. CloudStream (CS3) Setup (Optional)
+
+Lanettirr includes a native self-hosted CloudStream 3 repository that dynamically packages your server URL and language settings into a `.cs3` extension:
+
+1. Open **CloudStream** → **Settings → Extensions → Add repository**.
+2. Add the repository URL (or tap **Open in CloudStream** from `/configure` on your device):
+   - **Local**: `http://127.0.0.1:3001/saved/cs3/repo.json`
+   - **Remote / Tunnel**: `https://<your-tunnel-url>/saved/cs3/repo.json`
+3. Install the **Lanettirr** extension from the repository. All configuration changes saved in `/configure` (languages, quality limits, sorting, failover, blacklist) apply immediately without reinstalling the plugin.
+
 ## Daily Usage
 
 - **Start**: `baslat.bat`
@@ -78,7 +88,7 @@ To access your self-hosted instance from your phone or connect it to AIOStreams 
 1. Copy `.env.example` and rename the copy to `.env`.
 2. Set `ENABLE_TUNNEL=1` inside `.env` and, if needed, fill in your AIOStreams variables (`AIOSTREAMS_BASE_URL`, `AIOSTREAMS_UUID`, `AIOSTREAMS_PASSWORD`).
 3. Install `cloudflared` if it is not already installed (`winget install Cloudflare.cloudflared`), then restart services with `baslat.bat`.
-4. The generated tunnel URL is written to `.runtime/tunnel-url.txt`. The same `/configure`, `/saved/nuvio-repo/manifest.json`, `/saved/manifest.json`, and `/badges.json` endpoints work over the tunnel URL as well.
+4. The generated tunnel URL is written to `.runtime/tunnel-url.txt`. The same `/configure`, `/saved/nuvio-repo/manifest.json`, `/saved/cs3/repo.json`, `/saved/manifest.json`, and `/badges.json` endpoints work over the tunnel URL as well.
 
 ## Quick Troubleshooting
 
