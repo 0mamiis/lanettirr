@@ -226,7 +226,7 @@ $hubOk = Wait-HttpOk -Url ('http://127.0.0.1:' + $hubP + '/en-repo/manifest.json
 Start-ServiceProc -Name 'mega-bridge' -Port $megaP -FilePath $nodeExe -ArgumentList @('index.js') -WorkingDirectory (Join-Path $Root 'mega-bridge') | Out-Null
 $megaOk = Wait-HttpOk -Url ('http://127.0.0.1:' + $megaP + '/health') -TimeoutSec 20
 
-# 4. Opsiyonel Cloudflare Tunnel + AIOStreams senkronizasyonu
+# 4. Opsiyonel Cloudflare Tunnel
 $tunnelEnabled = ($env:ENABLE_TUNNEL -eq '1') -or ($env:ENABLE_TUNNEL -eq 'true')
 if ($tunnelEnabled) {
     $cfExe = $null
@@ -258,10 +258,6 @@ if ($tunnelEnabled) {
         if ($tunnelUrl) {
             Set-Content -LiteralPath (Join-Path $RuntimeDir 'tunnel-url.txt') -Value $tunnelUrl -Encoding UTF8
             Write-Host ('[OK] Tunel URL: ' + $tunnelUrl) -ForegroundColor Green
-            if ($env:AIOSTREAMS_BASE_URL -and $env:AIOSTREAMS_UUID -and $env:AIOSTREAMS_PASSWORD) {
-                $aioScript = Join-Path $Root 'scripts\update-aio.js'
-                & $nodeExe $aioScript $tunnelUrl
-            }
         } else {
             Write-Warning 'cloudflared tunel URL 20 saniye icinde alinamadi.'
         }
