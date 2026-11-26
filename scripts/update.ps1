@@ -143,7 +143,7 @@ function Resolve-MegaPort {
             }
         }
     }
-    return 3001
+    return 17410
 }
 
 $tempWork = Join-Path $env:TEMP ("lanettirr-upd-" + [Guid]::NewGuid().ToString("N"))

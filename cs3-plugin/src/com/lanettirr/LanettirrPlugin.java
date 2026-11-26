@@ -30,7 +30,7 @@ public class LanettirrPlugin extends Plugin {
         if (registered) return;
         registered = true;
         Properties props = loadEmbeddedConfig();
-        String baseUrl = trimOrDefault(props.getProperty("baseUrl"), "http://127.0.0.1:3001/saved");
+        String baseUrl = trimOrDefault(props.getProperty("baseUrl"), "http://127.0.0.1:17410/saved");
         String lang = trimOrDefault(props.getProperty("lang"), "tr");
         String name = trimOrDefault(props.getProperty("name"), "Lanettirr");
         registerMainAPI(new LanettirrProvider(baseUrl, lang, name));

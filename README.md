@@ -45,7 +45,7 @@ This single command automatically:
 - Installs Node.js, OpenJDK 21, FFmpeg, Git, Curl, and Unzip in Termux.
 - Clones Lanettirr into `~/lanettirr`, installs npm dependencies, and sets up `cs-host-deps.zip`.
 - Creates 1-tap **Termux:Widget** home-screen shortcuts (`Lanettirr-Start`, `Lanettirr-Stop`, `Lanettirr-Config`, `Lanettirr-Update`) and CLI commands (`lanettirr-start`, `lanettirr-stop`, `lanettirr-config`, `lanettirr-update`).
-- Starts all services on `127.0.0.1:3001` so you can add the local URLs directly in **Nuvio**, **CloudStream (CS3)**, or **Stremio** on the same phone.
+- Starts all services on `127.0.0.1:17410` so you can add the local URLs directly in **Nuvio**, **CloudStream (CS3)**, or **Stremio** on the same phone.
 
 ## Client Setup (Nuvio, CloudStream & Stremio)
 
@@ -53,13 +53,13 @@ This single command automatically:
 
 Open the web panel in your browser to configure and save your languages, repositories, sorting, and failover settings:
 
-- **Configuration Panel**: `http://127.0.0.1:3001/configure`
+- **Configuration Panel**: `http://127.0.0.1:17410/configure`
 
 ### 2. Plugins (Lanettirr Multi-Language Hub)
 
 Go to **Settings → Media → Content & Discovery → Plugins** and add the following URL:
 
-- **Lanettirr (Using Saved Config)**: `http://127.0.0.1:3001/saved/nuvio-repo/manifest.json`
+- **Lanettirr (Using Saved Config)**: `http://127.0.0.1:17410/saved/nuvio-repo/manifest.json`
 
 On the same screen, enable **"Group plugin providers by repository"**.
 
@@ -69,13 +69,13 @@ On the same screen, enable **"Group plugin providers by repository"**.
 
 To display stream card icons in the proper **Quality → Language/Dub → Container → HDR → Codec** order, set **Appearance → Layout → Streams → Fusion Badges URL** to:
 
-- **Fusion Badges**: `http://127.0.0.1:3001/badges.json`
+- **Fusion Badges**: `http://127.0.0.1:17410/badges.json`
 
 ### 4. Stremio & Compatible Apps (Optional)
 
 To use Lanettirr with Stremio or any Stremio-compatible client:
 
-- **Stremio Manifest**: `http://127.0.0.1:3001/saved/manifest.json`
+- **Stremio Manifest**: `http://127.0.0.1:17410/saved/manifest.json`
 
 ### 5. CloudStream (CS3) Setup (Optional)
 
@@ -83,7 +83,7 @@ Lanettirr includes a native self-hosted CloudStream 3 repository that dynamicall
 
 1. Open **CloudStream** → **Settings → Extensions → Add repository**.
 2. Add the repository URL (or tap **Open in CloudStream** from `/configure` on your device):
-   - **Local**: `http://127.0.0.1:3001/saved/cs3/repo.json`
+   - **Local**: `http://127.0.0.1:17410/saved/cs3/repo.json`
    - **Remote / Tunnel**: `https://<your-tunnel-url>/saved/cs3/repo.json`
 3. Install the **Lanettirr** extension from the repository. All configuration changes saved in `/configure` (languages, quality limits, sorting, failover, blacklist) apply immediately without reinstalling the plugin.
 
@@ -91,8 +91,9 @@ Lanettirr includes a native self-hosted CloudStream 3 repository that dynamicall
 
 - **Start**: `baslat.bat` (Windows) / `./start.sh` or `lanettirr-start` (Linux/Termux)
 - **Stop**: `durdur.bat` (Windows) / `./stop.sh` or `lanettirr-stop` (Linux/Termux)
-- **Update**: Click the one-click **Update** button in the top bar of the web configuration panel (`http://127.0.0.1:3001/configure`), or run `guncelle.bat` (Windows) / `./guncelle.sh` or `lanettirr-update` (Linux/Termux). Your user data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates.
-- **Health check**: `http://127.0.0.1:3001/health`
+- **Config Panel**: `ayarlar.bat` (Windows) / `lanettirr-config` or `Lanettirr-Config` widget (Termux)
+- **Update**: Click the one-click **Update** button in the top bar of the web configuration panel (`http://127.0.0.1:17410/configure`), or run `guncelle.bat` (Windows) / `./guncelle.sh` or `lanettirr-update` (Linux/Termux). Your user data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates.
+- **Health check**: `http://127.0.0.1:17410/health`
 - **Auto-start on Windows boot**: Create a shortcut to `scripts/start-hidden.vbs` inside your Windows Startup folder (`shell:startup`) to launch the services silently in the background at login.
 
 ## Optional: Remote Access (Cloudflare Tunnel)
@@ -107,9 +108,9 @@ To access your PC self-hosted instance remotely from another device:
 ## Quick Troubleshooting
 
 - **SmartScreen / PowerShell warning**: The `.bat` scripts invoke PowerShell with `-ExecutionPolicy Bypass`. Click **More info → Run anyway** if Windows prompts you.
-- **No streams showing in Nuvio**: Verify the services are running (`http://127.0.0.1:3001/health`). After configuration or update changes, run `durdur.bat` followed by `baslat.bat`, then refresh plugins in Nuvio.
+- **No streams showing in Nuvio**: Verify the services are running (`http://127.0.0.1:17410/health`). After configuration or update changes, run `durdur.bat` followed by `baslat.bat`, then refresh plugins in Nuvio.
 - **Mbps or codec badges missing on cards**: `ffprobe` must be available. `kur.bat` installs FFmpeg automatically via WinGet, or you can set `FFPROBE_PATH` / `MEGA_FFPROBE` in `.env`.
-- **Port conflict (`7100` or `3001`)**: Run `durdur.bat` first to stop leftover processes, then start cleanly with `baslat.bat`.
+- **Port conflict (`7100` or `17410`)**: Run `durdur.bat` first to stop leftover processes, then start cleanly with `baslat.bat`.
 - **Incomplete setup**: Simply run `kur.bat` again; it checks for and installs any missing components.
 
 ## License & Third-Party Notices

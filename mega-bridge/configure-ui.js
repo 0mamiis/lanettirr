@@ -1411,6 +1411,13 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    const r = await fetch(ORIGIN + "/health?t=" + Date.now(), { cache: "no-store" });' +
     '    if (r.ok) { pollUpdateStatus(); return; }' +
     '  } catch {}' +
+    '  if (window.location.port === "3001") {' +
+    '    try {' +
+    '      const nextOrigin = window.location.protocol + "//" + window.location.hostname + ":17410";' +
+    '      const r2 = await fetch(nextOrigin + "/health?t=" + Date.now(), { cache: "no-store" });' +
+    '      if (r2.ok) { updReconnecting = false; updState.mode = "done"; updState.percent = 100; renderUpdateBar(); schedulePoll(1200, () => { window.location.href = nextOrigin + window.location.pathname + window.location.search; }); return; }' +
+    '    } catch {}' +
+    '  }' +
     '  if (tries > 60) { updReconnecting = false; updState.mode = "err"; updState.error = "Timeout"; renderUpdateBar(); return; }' +
     '  schedulePoll(1200, () => waitForBridgeOnline(tries + 1));' +
     '}' +

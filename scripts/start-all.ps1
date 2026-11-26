@@ -57,7 +57,7 @@ $bbP = Resolve-Port -CliVal $BbPort -EnvNames @('BB_PORT') -DefaultVal 7200
 $egressP = Resolve-Port -CliVal $EgressPort -EnvNames @('EGRESS_PORT') -DefaultVal 7301
 $bridgeP = Resolve-Port -CliVal $BridgePort -EnvNames @('BRIDGE_PORT') -DefaultVal 7000
 $hubP = Resolve-Port -CliVal $HubPort -EnvNames @('HUB_PORT') -DefaultVal 7100
-$megaP = Resolve-Port -CliVal $MegaPort -EnvNames @('MEGA_PORT', 'PORT') -DefaultVal 3001
+$megaP = Resolve-Port -CliVal $MegaPort -EnvNames @('MEGA_PORT', 'PORT') -DefaultVal 17410
 
 if (-not [string]::IsNullOrWhiteSpace($MegaHost)) {
     $megaH = $MegaHost.Trim()
@@ -81,8 +81,12 @@ $env:HUB_PORT = [string]$hubP
 $env:HUB_HOST = '127.0.0.1'
 $env:UNIFIED_PORT = [string]$hubP
 if ([string]::IsNullOrWhiteSpace($env:NU_CONC)) {
-    $env:NU_CONC = '16'
+    $env:NU_CONC = '12'
 }
+if ([string]::IsNullOrWhiteSpace($env:TRHUB_PREFETCH)) { $env:TRHUB_PREFETCH = '0' }
+if ([string]::IsNullOrWhiteSpace($env:TRHUB_SPEED_PROBE)) { $env:TRHUB_SPEED_PROBE = '0' }
+if ([string]::IsNullOrWhiteSpace($env:EGRESS_CACHE_MB)) { $env:EGRESS_CACHE_MB = '64' }
+if ([string]::IsNullOrWhiteSpace($env:MEGA_FFPROBE_CONC)) { $env:MEGA_FFPROBE_CONC = '3' }
 $env:PORT = [string]$megaP
 $env:HOST = $megaH
 $env:HUB_URL = ('http://127.0.0.1:' + $hubP)
@@ -146,6 +150,7 @@ function Wait-TcpOk {
 }
 
 $tracked = New-Object System.Collections.Generic.List[object]
+$watchSpecs = New-Object System.Collections.Generic.List[object]
 if (Test-Path -LiteralPath $PidFile) {
     try {
         $prev = Get-Content -LiteralPath $PidFile -Raw | ConvertFrom-Json
@@ -176,25 +181,17 @@ function Start-ServiceProc {
     $outLog = Join-Path $LogDir ($Name + '.out.log')
     $errLog = Join-Path $LogDir ($Name + '.err.log')
 
-    if ($NoLoops) {
-        $p = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
-    } else {
-        $loopScript = Join-Path $RuntimeDir ('loop-' + $Name + '.ps1')
-        $escapedArgs = ($ArgumentList | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ' '
-        $loopBody = @(
-            '$ErrorActionPreference = "Continue"'
-            "Set-Location -LiteralPath '" + ($WorkingDirectory -replace "'", "''") + "'"
-            'while ($true) {'
-            "    try {"
-            "        & '" + ($FilePath -replace "'", "''") + "' " + $escapedArgs + " >> '" + ($outLog -replace "'", "''") + "' 2>> '" + ($errLog -replace "'", "''") + "'"
-            "    } catch {}"
-            "    Start-Sleep -Seconds 3"
-            "}"
-        ) -join [Environment]::NewLine
-        Set-Content -LiteralPath $loopScript -Value $loopBody -Encoding UTF8
-        $psExe = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-        $p = Start-Process -FilePath $psExe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', $loopScript) -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -PassThru
-    }
+    $p = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
+    $watchSpecs.Add([ordered]@{
+        name = $Name
+        port = $Port
+        pid = $p.Id
+        filePath = $FilePath
+        args = $ArgumentList
+        workDir = $WorkingDirectory
+        outLog = $outLog
+        errLog = $errLog
+    })
 
     $entry = [PSCustomObject]@{
         name = $Name
@@ -267,6 +264,62 @@ if ($tunnelEnabled) {
 }
 
 # 5. PID dosyasini kaydet
+if ((-not $NoLoops) -and ($watchSpecs.Count -gt 0)) {
+    $existingWd = $tracked | Where-Object { $_.name -eq 'watchdog' } | Select-Object -First 1
+    if ($existingWd -and $existingWd.pid) {
+        try { Stop-Process -Id ([int]$existingWd.pid) -Force -ErrorAction SilentlyContinue } catch {}
+        $tracked.Remove($existingWd) | Out-Null
+    }
+    $specFile = Join-Path $RuntimeDir 'watchdog-specs.json'
+    ($watchSpecs | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $specFile -Encoding UTF8
+    $wdScript = Join-Path $RuntimeDir 'watchdog-all.ps1'
+    $wdBody = @'
+param([string]$SpecFile, [string]$PidFile)
+$ErrorActionPreference = "Continue"
+function Test-LocalPort([int]$p) {
+    if ($p -le 0) { return $false }
+    $c = New-Object System.Net.Sockets.TcpClient
+    try { $ar = $c.BeginConnect("127.0.0.1", $p, $null, $null); if ($ar.AsyncWaitHandle.WaitOne(350, $false) -and $c.Connected) { $c.EndConnect($ar); return $true }; return $false } catch { return $false } finally { $c.Close() }
+}
+while ($true) {
+    Start-Sleep -Seconds 8
+    if (-not (Test-Path -LiteralPath $SpecFile)) { break }
+    try { $specs = @(Get-Content -LiteralPath $SpecFile -Raw | ConvertFrom-Json) } catch { continue }
+    $changed = $false
+    foreach ($s in $specs) {
+        $alive = $false
+        if ($s.pid) { $alive = ($null -ne (Get-Process -Id ([int]$s.pid) -ErrorAction SilentlyContinue)) }
+        if ((-not $alive) -and ($s.port -gt 0)) { $alive = Test-LocalPort ([int]$s.port) }
+        if (-not $alive) {
+            try {
+                $np = Start-Process -FilePath $s.filePath -ArgumentList @($s.args) -WorkingDirectory $s.workDir -WindowStyle Hidden -RedirectStandardOutput $s.outLog -RedirectStandardError $s.errLog -PassThru
+                if ($np) { $s.pid = $np.Id; $changed = $true }
+            } catch {}
+        }
+    }
+    if ($changed) {
+        try { ($specs | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $SpecFile -Encoding UTF8 } catch {}
+        try {
+            if (Test-Path -LiteralPath $PidFile) {
+                $pf = Get-Content -LiteralPath $PidFile -Raw | ConvertFrom-Json
+                foreach ($s in $specs) {
+                    $m = $pf.processes | Where-Object { $_.name -eq $s.name } | Select-Object -First 1
+                    if ($m) { $m.pid = [int]$s.pid }
+                }
+                $pf.updatedAt = (Get-Date).ToString("o")
+                ($pf | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $PidFile -Encoding UTF8
+            }
+        } catch {}
+    }
+}
+'@
+    Set-Content -LiteralPath $wdScript -Value $wdBody -Encoding UTF8
+    $psExe = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    $wdProc = Start-Process -FilePath $psExe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', $wdScript, '-SpecFile', $specFile, '-PidFile', $PidFile) -WorkingDirectory $Root -WindowStyle Hidden -PassThru
+    if ($wdProc) {
+        $tracked.Insert(0, [PSCustomObject]@{ name = 'watchdog'; port = 0; pid = $wdProc.Id; startedAt = (Get-Date).ToString('o') })
+    }
+}
 $procArray = @()
 foreach ($t in $tracked) {
     $procArray += [ordered]@{

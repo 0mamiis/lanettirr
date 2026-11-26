@@ -77,7 +77,7 @@
     }
   ],
   "torrentlio": {
-    "enabled": true,
+    "enabled": false,
     "mode": "mux",
     "maxDubs": 12,
     "base": "https://torrentio.strem.fun",

@@ -17,7 +17,8 @@ try {
 
 $stopped = 0
 if ($data -and $data.processes) {
-    foreach ($item in $data.processes) {
+    $ordered = @($data.processes | Where-Object { $_.name -eq 'watchdog' }) + @($data.processes | Where-Object { $_.name -ne 'watchdog' })
+    foreach ($item in $ordered) {
         if (-not $item.pid) { continue }
         $procId = [int]$item.pid
         $exists = Get-Process -Id $procId -ErrorAction SilentlyContinue

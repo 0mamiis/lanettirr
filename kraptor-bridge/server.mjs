@@ -144,6 +144,7 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 	.replace(/ı/g, "i").replace(/[^a-z0-9]+/g, " ").trim();
 const withTimeout = (p, ms, label) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout " + label)), ms))]);
+function capMap(m, max) { while (m.size > max) m.delete(m.keys().next().value); }
 const cache = new Map();
 
 async function j(url, opts) {
@@ -332,7 +333,7 @@ async function baseStreams(type, id) {
 		subtitles: (s.subs || []).map((x, i) => ({ id: "fhd" + i, url: x.url, lang: x.lang })),
 	}));
 	log("streams:", streams.length);
-	if (streams.length) cache.set("b"+id, { t: Date.now(), v: streams });
+	if (streams.length) { cache.set("b"+id, { t: Date.now(), v: streams }); capMap(cache, 120); }
 	return streams;
 }
 
@@ -347,7 +348,7 @@ import * as cm from "./prov_cizgimax.mjs";
 import * as bb from "./bigbull.mjs";
 import netCP from "node:net";
 const NEXT_SEG = new Map();   // parca sorgusu -> sonraki 3 parca (on-indirme icin)
-function rememberSegs(pl) { const q = []; for (const l of pl.split(/\r?\n/)) { const i = l.indexOf("/px/s.ts?"); if (i >= 0 && !l.startsWith("#")) q.push(l.slice(i + 9).trim()); } for (let k = 0; k < q.length; k++) NEXT_SEG.set(q[k], q.slice(k + 1, k + 4)); while (NEXT_SEG.size > 30000) NEXT_SEG.delete(NEXT_SEG.keys().next().value); }
+function rememberSegs(pl) { const q = []; for (const l of pl.split(/\r?\n/)) { const i = l.indexOf("/px/s.ts?"); if (i >= 0 && !l.startsWith("#")) q.push(l.slice(i + 9).trim()); } for (let k = 0; k < q.length; k++) NEXT_SEG.set(q[k], q.slice(k + 1, k + 4)); while (NEXT_SEG.size > 2000) NEXT_SEG.delete(NEXT_SEG.keys().next().value); }
 const EGRESS_PORT = Number(process.env.EGRESS_PORT || 7301);
 const CLIENT_PX = Object.fromEntries(["127.0.0.1", ...String(process.env.CLIENT_PX_IPS || "").split(",").map((s) => s.trim()).filter(Boolean)].map((ip) => [ip, 1]));
 const cpState = new Map();
@@ -484,6 +485,7 @@ const server = http.createServer(async (req, res) => {
 			if (!e || Date.now() - e.t > 600000) {
 				e = { t: Date.now(), out: [], done: null };
 				bbRaw.set(bid, e);
+				capMap(bbRaw, 40);
 				e.done = (async () => { const m = await meta(bt, bid.split(":")[0]); const titles = [...new Set([m.tr, m.name].filter(Boolean))]; const [, se, ep] = bid.split(":"); await bb.get({ type: bt, titles, year: m.year, season: +se || 1, episode: +ep || 1, out: e.out, pxUrl, log }); })().catch((er) => log("bigbull raw error", er.message));
 			}
 			await Promise.race([e.done, new Promise((r) => setTimeout(r, 50000))]);

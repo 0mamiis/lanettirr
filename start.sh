@@ -38,8 +38,21 @@ export BB_HOST="http://127.0.0.1:$BB_PORT"
 export HUB_PORT="${HUB_PORT:-7100}"
 export HUB_HOST="127.0.0.1"
 export UNIFIED_PORT="$HUB_PORT"
-export NU_CONC="${NU_CONC:-12}"
-export PORT="${MEGA_PORT:-${PORT:-3001}}"
+IS_TERMUX=0
+if [ -n "${PREFIX:-}" ] && printf '%s' "$PREFIX" | grep -q "com.termux"; then IS_TERMUX=1; fi
+if [ "$IS_TERMUX" -eq 1 ]; then
+  export NU_CONC="${NU_CONC:-6}"
+  export EGRESS_CACHE_MB="${EGRESS_CACHE_MB:-24}"
+  export EGRESS_PREFETCH="${EGRESS_PREFETCH:-1}"
+  export MEGA_FFPROBE_CONC="${MEGA_FFPROBE_CONC:-2}"
+  export CS_HOST_XMX="${CS_HOST_XMX:-256m}"
+  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=256}"
+else
+  export NU_CONC="${NU_CONC:-12}"
+  export EGRESS_CACHE_MB="${EGRESS_CACHE_MB:-64}"
+  export MEGA_FFPROBE_CONC="${MEGA_FFPROBE_CONC:-3}"
+fi
+export PORT="${MEGA_PORT:-${PORT:-17410}}"
 export HOST="${MEGA_HOST:-${HOST:-127.0.0.1}}"
 export HUB_URL="http://127.0.0.1:$HUB_PORT"
 

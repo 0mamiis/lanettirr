@@ -144,7 +144,7 @@ function combineSignals(timeoutMs, extSignal) {
     }
   };
 }
-const MAX_FFPROBE_CONCURRENCY = 3;
+const MAX_FFPROBE_CONCURRENCY = Math.max(1, Math.min(8, parseInt(process.env.MEGA_FFPROBE_CONC || '3', 10) || 3));
 let ffprobeActive = 0;
 const ffprobeQueue = [];
 function withFfprobeSlot(fn) {
@@ -467,7 +467,7 @@ function scraperMatchesLangStrict(meta, code) {
   return ls.includes(code) || ls.includes(base);
 }
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.MEGA_PORT || process.env.PORT || 17410) || 17410;
 
 // ─── Source repos (priority order — first wins on duplicate IDs) ──────────────
 const REPOS = [
@@ -1160,8 +1160,8 @@ async function loadAll() {
         const softWait = isOnlyTr
           ? Math.min(Math.max(rawMs, 13000), Math.max(6000, remMs - 6000))
           : Math.max(4000, Math.min(remMs - 2500, 12000));
-        const hardWait = Math.max(softWait, Math.min(remMs - 3000, softWait + 7000));
-        const reqTimeout = Math.max(4000, remMs - 500);
+        const reqTimeout = Math.max(5000, remMs - 500);
+        const hardWait = Math.max(4000, Math.min(reqTimeout - 3500, Math.max(softWait, softWait + 7000)));
         const txt = await httpGet(`${HUB_URL}/g/tr/stream/${stType}/${encodeURIComponent(stId)}.json?wait=${Math.round(softWait)}&hard=${Math.round(hardWait)}`, {}, reqTimeout, 0, { signal });
         const j = safeJson(txt);
         return ((j && j.streams) || []).map((s) => {
@@ -1198,8 +1198,8 @@ async function loadAll() {
 
   const meta = {
     id          : 'community.nuvio.mega.bridge',
-    version     : '1.0.0',
-    name        : 'Nuvio Mega Bridge',
+    version     : getLocalVersion(),
+    name        : 'Lanettirr',
     description : `${loaded.length} providers from TR Hub + EN Hub`,
     logo        : 'https://raw.githubusercontent.com/yoruix/nuvio-providers/main/Assets/Logo-2.png',
     resources   : ['stream'],
@@ -1417,13 +1417,12 @@ async function getProvidersForLangs(langs) {
 function manifestForConfig(cfg) {
   const ls = (cfg.langs || ["tr", "en"]).map(s => s.toUpperCase());
   const slug = cfg.langs.slice().sort().join("_");
-  const modeLabel = cfg.mode === "direct" ? "Direct" : "Mega";
-  const shortName = ls.length === 1 ? (modeLabel + " \u00b7 " + ls[0]) : ls.length <= 3 ? ("Nuvio " + modeLabel + " \u00b7 " + ls.join("+")) : ("Nuvio " + modeLabel + " \u00b7 " + ls.length + " Dil");
+  const shortName = ls.length === 1 ? ("Lanettirr \u00b7 " + ls[0]) : ls.length <= 3 ? ("Lanettirr \u00b7 " + ls.join("+")) : ("Lanettirr \u00b7 " + ls.length + " Lang");
   return {
-    ...(stremioMeta || { version: "2.0.0", resources: ["stream"], types: ["movie", "series"], idPrefixes: ["tt", "tmdb:"], catalogs: [] }),
-    id: "community.nuvio.mega." + slug + (cfg.mode === "direct" ? ".direct" : ""),
+    ...(stremioMeta || { version: getLocalVersion(), resources: ["stream"], types: ["movie", "series"], idPrefixes: ["tt", "tmdb:"], catalogs: [] }),
+    id: "community.lanettirr." + slug + (cfg.mode === "mega" ? ".mega" : ""),
     name: shortName,
-    description: "Secili diller: " + ls.join(", ") + " · Dogrudan akis (torrent yok)",
+    description: "Lanettirr (" + ls.join(", ") + ") · Direct VOD streams (no torrents)",
     behaviorHints: { configurable: true, configurationRequired: false },
   };
 }
@@ -4602,7 +4601,7 @@ const server = http.createServer(async (req, res) => {
         const directHdrs = (planId || s._needsProxy) ? {} : reqHdrs;
         const ref = directHdrs.Referer || directHdrs.referer || "";
         const line1 = String(disp.title || "").split("\n")[0] || disp.res || "";
-        const label = [disp.name, line1].filter(Boolean).join(" · ");
+        const label = line1 || disp.name || "Lanettirr";
         return {
           source: disp.name || "Lanettirr",
           name: label || disp.name || "Lanettirr",
@@ -4721,41 +4720,42 @@ const server = http.createServer(async (req, res) => {
     try {
       const sid = decodeURIComponent(m[2]);
       const list = await getStreamsCached(m[1], sid, cfg.langs, cfg.timeoutSec, cfg.disabledRepos, cfg.disabledProvs);
-      if (cfg.mode === "direct") {
-        const direct = applyStreamControls(list, cfg);
-        if (direct.length) {
-          const isTv = m[1] === "series";
-          const toEnrich = direct.slice(0, 8);
-          let budgetTimer;
-          const deadline = new Promise(resolve => { budgetTimer = setTimeout(resolve, 3500); });
-          try {
-            await Promise.race([
-              runPool(toEnrich, 4, async (s) => {
-                const met = await probeOneStreamMetric(s, isTv);
-                if (met.kbps) s._kbps = met.kbps;
-                if (met.latencyMs) s._latencyMs = met.latencyMs;
-                if (met.mediaMeta) s._mediaMeta = mergeMediaMeta(s._mediaMeta, met.mediaMeta);
-                if (Array.isArray(met.audioLangs) && met.audioLangs.length) s._audioLangs = met.audioLangs;
-                if (Array.isArray(met.subLangs) && met.subLangs.length) s._subLangs = met.subLangs;
-                const realRes = met.res || met.realRes;
-                if (realRes && ALLOWED_RES.has(realRes)) {
-                  s._realRes = realRes;
-                  applyVerifiedResolution(s, realRes);
-                }
-              }),
-              deadline,
-            ]);
-          } finally {
-            clearTimeout(budgetTimer);
-          }
-          sortStreamsForCfg(direct, cfg);
-          for (const s of direct) {
-            const disp = buildVerifiedStreamDisplay(s, "Stream");
-            s.name = [disp.res, disp.name].filter(Boolean).join(" · ");
-            s.title = disp.title;
-          }
+      if (cfg.mode !== "mega") {
+        const mediaKey = m[1] + "|" + sid;
+        const orderedLangs = orderHubLangs(cfg);
+        const picked = await enrichAndApplyStreamControls(list, cfg, m[1] === "series", { slug: orderedLangs.length === 1 ? orderedLangs[0] : "", mediaKey });
+        let planId = null;
+        if (cfg.failover && picked.length) {
+          planId = "p_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+          const allVer = Array.isArray(picked._allVerified) ? picked._allVerified : picked;
+          const toCand = (x) => ({ url: x.url, headers: x.behaviorHints?.proxyHeaders?.request || {}, isHls: !!x._needsProxy || isLikelyHlsUrl(x.url), provider: streamProviderName(x), res: x._realRes || detectResolution(x.name) || "720p" });
+          const slots = picked.map(prim => {
+            const pRes = prim._realRes || detectResolution(prim.name) || "720p";
+            const pRank = RES_RANK[pRes] ?? 3;
+            const rest = allVer.filter(x => x.url !== prim.url).slice().sort((a, b) => {
+              const ra = RES_RANK[a._realRes || detectResolution(a.name) || "720p"] ?? 3;
+              const rb = RES_RANK[b._realRes || detectResolution(b.name) || "720p"] ?? 3;
+              return Math.abs(ra - pRank) - Math.abs(rb - pRank);
+            }).slice(0, 12);
+            return [toCand(prim), ...rest.map(toCand)];
+          });
+          playPlans.set(planId, { t: Date.now(), mediaKey, mediaLabel: sid, lang: orderedLangs[0] || "", fbto: cfg.failoverSec || 15, slots });
+          capMap(playPlans, 200);
         }
-        json(res, 200, { streams: direct });
+        const outStreams = picked.map((s, idx) => {
+          const disp = buildVerifiedStreamDisplay(s, "Lanettirr");
+          const reqHdrs = s.behaviorHints?.proxyHeaders?.request || {};
+          const isHlsPlay = !!s._needsProxy || isLikelyHlsUrl(s.url);
+          const finalUrl = planId ? (origin + "/play/" + planId + "/" + idx + (isHlsPlay ? "/s.m3u8" : "/s.mp4")) : (s._needsProxy ? proxyUrl(origin, s.url, reqHdrs, "s.m3u8", s._hubLang || orderedLangs[0] || "") : s.url);
+          const bh = (planId || s._needsProxy || !Object.keys(reqHdrs).length) ? undefined : { notWebReady: true, proxyHeaders: { request: reqHdrs } };
+          return {
+            name: [disp.res, disp.name].filter(Boolean).join(" · "),
+            title: disp.title,
+            url: finalUrl,
+            ...(bh ? { behaviorHints: bh } : {}),
+          };
+        });
+        json(res, 200, { streams: outStreams });
         return;
       }
       const probed = await probeAll(m[1], sid, cfg.langs, cfg.timeoutSec, cfg.disabledRepos, cfg.disabledProvs);

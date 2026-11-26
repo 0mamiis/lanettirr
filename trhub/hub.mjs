@@ -34,7 +34,7 @@ const DEFAULTS = {
   hidden: [],            // kapatilan saglayici adlari
   csRepos: [],           // repos.txt'ten gelir
   nuvioRepos: [],        // { url, enabled }
-  torrentlio: { enabled: true, mode: 'mux', maxDubs: 8, base: 'https://torrentio.strem.fun', providers: ['yts', 'eztv', '1337x', 'thepiratebay', 'torrentgalaxy', 'nyaasi'], sort: 'qualitysize', qualityfilter: ['scr', 'cam', '480p'], limit: 3, language: '', maxStreams: 24 },
+  torrentlio: { enabled: false, mode: 'mux', maxDubs: 8, base: 'https://torrentio.strem.fun', providers: ['yts', 'eztv', '1337x', 'thepiratebay', 'torrentgalaxy', 'nyaasi'], sort: 'qualitysize', qualityfilter: ['scr', 'cam', '480p'], limit: 3, language: '', maxStreams: 24 },
 };
 const log = (...a) => { try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + a.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join(' ') + '\n'); } catch {} };
 
@@ -52,6 +52,9 @@ function saveSettings(s) {
 }
 
 // ---------- meta ----------
+const TRHUB_PREFETCH = process.env.TRHUB_PREFETCH === '1';
+const TRHUB_SPEED_PROBE = process.env.TRHUB_SPEED_PROBE === '1';
+function capMap(m, max) { while (m.size > max) m.delete(m.keys().next().value); }
 const metaCache = new Map();
 async function metaFor(type, imdb) {
   if (metaCache.has(imdb)) return metaCache.get(imdb);
@@ -68,6 +71,7 @@ async function metaFor(type, imdb) {
     tmdbId: t.id || null,
   };
   metaCache.set(imdb, m);
+  capMap(metaCache, 300);
   return m;
 }
 
@@ -222,7 +226,8 @@ async function collect(type, id, st, kinds = 'all', maxWait = LIST_WAIT) {
       await Promise.allSettled([kinds !== 'nu' ? csStreams(type, m, season, episode, st, sink) : null, kinds !== 'cs' ? nuvioStreams(type, imdb, m, season, episode, st, sink) : null]);
       const items = sink.map(describe);
       cache.set(key, { t: Date.now(), items });
-      setTimeout(() => probeSpeeds(items).catch(() => {}), 1000);
+      capMap(cache, 80);
+      if (TRHUB_SPEED_PROBE) setTimeout(() => probeSpeeds(items).catch(() => {}), 1000);
     })().catch((e) => log('collect', e.message)).finally(() => inflight.delete(key));
     inflight.set(key, run);
   }
@@ -290,7 +295,7 @@ export async function mxStreams(type, id) {
   });
 }
 
-function prefetchNext(type, id, st) { if (type !== 'series') return; const [imdb, se, ep] = id.split(':'); if (!ep) return; const next = imdb + ':' + se + ':' + (Number(ep) + 1); const go = () => collect(type, next, st, 'all', 1).catch(() => {}); setTimeout(go, 5000); setTimeout(go, 32 * 60 * 1000); }   // hemen ve bolum bitimine dogru (linkler taze kalsin)
+function prefetchNext(type, id, st) { if (!TRHUB_PREFETCH || type !== 'series') return; const [imdb, se, ep] = id.split(':'); if (!ep) return; const next = imdb + ':' + se + ':' + (Number(ep) + 1); const go = () => collect(type, next, st, 'all', 1).catch(() => {}); setTimeout(go, 5000); }
 export async function streamsFor(type, id, st, group = 'all') {
   if (group === 'all' || group === 'cs' || group === 'nu') prefetchNext(type, id, st);
   if (group === 'tr') { prefetchNext(type, id, st); return (await providerItems(type, id, st)).map(publicStream); }
@@ -393,7 +398,8 @@ function getProvSession(type, id, st) {
       const csItems = csSink.map(describe), nuItems = nuSink.map(describe);
       cache.set(cKeyCs, { t: Date.now(), items: csItems });
       cache.set(cKeyNu, { t: Date.now(), items: nuItems });
-      setTimeout(() => probeSpeeds([...csItems, ...nuItems]).catch(() => {}), 1000);
+      capMap(cache, 80);
+      if (TRHUB_SPEED_PROBE) setTimeout(() => probeSpeeds([...csItems, ...nuItems]).catch(() => {}), 1000);
     })().catch((e) => log('provCollect', e.message)).finally(() => { sess.csDone = true; sess.nuDone = true; sess.done = true; });
   }
   provSessions.set(sk, sess);

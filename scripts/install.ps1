@@ -351,9 +351,11 @@ if ($makeShortcut) {
 
 Write-Host ''
 Write-Host '=== Kurulum Tamamlandi! ===' -ForegroundColor Green
-Write-Host 'Simdi baslat.bat dosyasini calistirip Nuvio Desktop icinde su 3 linki ekleyin:'
-Write-Host '  1. Nuvio -> Ayarlar -> Eklenti Depolari (TR Hub): http://127.0.0.1:7100/nuvio-repo/manifest.json'
-Write-Host '  2. Nuvio -> Ayarlar -> Eklenti Depolari (EN Hub): http://127.0.0.1:7100/en-repo/manifest.json'
-Write-Host '  3. Nuvio -> Ayarlar -> Eklentiler       (Mega)  : http://127.0.0.1:3001/manifest.json'
-Write-Host 'Not: Nuvio ayarlarinda "Eklenti saglayicilarini depoya gore grupla" secenegini acin.'
+Write-Host 'Simdi baslat.bat dosyasini calistirin ve tarayicida ayar panelini acin:'
+Write-Host '  Ayar Paneli    : http://127.0.0.1:17410/configure'
+Write-Host '  Nuvio Repo     : http://127.0.0.1:17410/saved/nuvio-repo/manifest.json'
+Write-Host '  CloudStream 3  : http://127.0.0.1:17410/saved/cs3/repo.json'
+Write-Host '  Fusion Rozet   : http://127.0.0.1:17410/badges.json'
+Write-Host '  Stremio        : http://127.0.0.1:17410/saved/manifest.json'
+Write-Host 'Not: Nuvio eklenti ayarlarinda "Eklenti saglayicilarini depoya gore grupla" secenegini acin.'
 

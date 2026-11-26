@@ -29,7 +29,8 @@ if not defined JAVA_EXE (
 set "PATH=%JAVA_HOME%\bin;%PATH%"
 set "BB_DEX2JAR=%CS_DIR%tools\dex-tools-v2.4"
 set "CP=%CS_DIR%out;%CS_DIR%lib\builtins;%CS_DIR%lib\okhttp-jvm.jar;%CS_DIR%lib\kotlin-reflect.jar;%CS_DIR%lib\cryptography-provider-jdk-jvm.jar;%CS_DIR%lib\cryptography-provider-optimal-jvm.jar;%CS_DIR%lib\cryptography-core-jvm.jar;%CS_DIR%lib\cryptography-provider-base-jvm.jar;%CS_DIR%lib\cryptography-random-jvm.jar;%CS_DIR%lib\cryptography-serialization-asn1-jvm.jar;%CS_DIR%lib\cryptography-serialization-asn1-modules-jvm.jar;%CS_DIR%lib\cryptography-serialization-pem-jvm.jar;%CS_DIR%lib\cryptography-bigint-jvm.jar;%CS_DIR%lib\cs-app.jar;%CS_DIR%lib\android.jar"
-"%JAVA_EXE%" -Xmx1g -cp "%CP%" Host >> "%CS_DIR%host.log" 2>&1
+if not defined CS_HOST_XMX set "CS_HOST_XMX=512m"
+"%JAVA_EXE%" -Xms48m -Xmx%CS_HOST_XMX% -XX:+UseG1GC -XX:MaxHeapFreeRatio=25 -XX:MinHeapFreeRatio=10 -cp "%CP%" Host >> "%CS_DIR%host.log" 2>&1
 exit /b %ERRORLEVEL%
 
 :try_where_java

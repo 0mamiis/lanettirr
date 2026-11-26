@@ -193,7 +193,7 @@ if [ "$NO_RESTART" -eq 0 ]; then
     sleep 1
     nohup node "$MB_DIR/index.js" >"$RUNTIME_DIR/mega-bridge.out.log" 2>"$RUNTIME_DIR/mega-bridge.err.log" &
   fi
-  MEGA_PORT="${MEGA_PORT:-${PORT:-3001}}"
+  MEGA_PORT="${MEGA_PORT:-${PORT:-17410}}"
   for _ in $(seq 1 25); do
     if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 2 "http://127.0.0.1:${MEGA_PORT}/health" >/dev/null 2>&1; then
       break

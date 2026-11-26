@@ -30,16 +30,27 @@ const bad = (u) => { if (u) { u.ok = false; u.at = Date.now(); } };
 
 // Local segment proxy: video parcasini dogrudan bu cihazin kendi internetinden ceker
 const PX_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const pxCache = new Map(); let pxBytes = 0;   // on-indirilen parcalar (3 dk, en fazla 300 MB)
+const PX_MAX_BYTES = Math.max(8, Number(process.env.EGRESS_CACHE_MB || 64)) * 1024 * 1024;
+const PX_TTL_MS = Math.max(15000, Number(process.env.EGRESS_CACHE_TTL_MS || 90000));
+const PX_PREFETCH = Math.max(0, Math.min(3, Number(process.env.EGRESS_PREFETCH ?? 2)));
+const pxCache = new Map(); let pxBytes = 0;
+const pxEvict = () => {
+  const now = Date.now();
+  for (const [kk, v] of pxCache) {
+    if (pxBytes <= PX_MAX_BYTES && pxCache.size <= 80 && now - v.t < PX_TTL_MS) break;
+    pxCache.delete(kk); pxBytes = Math.max(0, pxBytes - (v.n || 0));
+  }
+};
+setInterval(pxEvict, 60000).unref();
 const pxKey = (q) => JSON.stringify([q.get('u'), q.get('r') || '', q.get('o') || '']);
 function pxHeaders(q) { const h = { 'user-agent': PX_UA, accept: '*/*' }; if (q.get('r')) h.referer = q.get('r'); if (q.get('o')) h.origin = q.get('o'); return h; }
 function pxFull(q) {
   const k = pxKey(q); const e0 = pxCache.get(k);
-  if (e0 && Date.now() - e0.t < 180000) return e0.p;
+  if (e0 && Date.now() - e0.t < PX_TTL_MS) return e0.p;
   const e = { t: Date.now(), n: 0 };
   e.p = (async () => { const r = await fetch(q.get('u'), { headers: pxHeaders(q), redirect: 'follow', signal: AbortSignal.timeout(60000) }); const buf = Buffer.from(await r.arrayBuffer()); return { status: r.status, ct: r.headers.get('content-type'), buf }; })();
   pxCache.set(k, e);
-  e.p.then((x) => { if (x.status >= 400) { pxCache.delete(k); return; } e.n = x.buf.length; pxBytes += e.n; for (const [kk, v] of pxCache) { if (pxBytes <= 300e6 && Date.now() - v.t < 180000) break; pxCache.delete(kk); pxBytes -= v.n; } }).catch(() => pxCache.delete(k));
+  e.p.then((x) => { if (x.status >= 400) { pxCache.delete(k); return; } e.n = x.buf.length; pxBytes += e.n; pxEvict(); }).catch(() => pxCache.delete(k));
   return e.p;
 }
 async function localPx(req, res) {
@@ -48,7 +59,7 @@ async function localPx(req, res) {
     const q = new URL(req.url, 'http://x').searchParams;
     const u = q.get('u');
     if (!u || !/^https?:\/\//.test(u)) { res.writeHead(400, cors); return res.end(); }
-    if (q.get('nx')) { try { for (const qs of JSON.parse(q.get('nx')).slice(0, 3)) pxFull(new URLSearchParams(qs)).catch(() => {}); } catch {} }
+    if (PX_PREFETCH > 0 && q.get('nx')) { try { for (const qs of JSON.parse(q.get('nx')).slice(0, PX_PREFETCH)) pxFull(new URLSearchParams(qs)).catch(() => {}); } catch {} }
     const rg = req.headers.range;
     if (!rg || /^bytes=0-$/.test(rg)) {   // tam parca: on-indirme onbellegini kullan
       const x = await pxFull(q);

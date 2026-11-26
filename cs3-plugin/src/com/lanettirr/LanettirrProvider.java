@@ -36,7 +36,7 @@ public class LanettirrProvider extends TmdbProvider {
 
     public LanettirrProvider(String baseUrl, String lang, String name) {
         super();
-        String cleanBase = baseUrl == null ? "http://127.0.0.1:3001/saved" : baseUrl.trim();
+        String cleanBase = baseUrl == null ? "http://127.0.0.1:17410/saved" : baseUrl.trim();
         while (cleanBase.endsWith("/")) {
             cleanBase = cleanBase.substring(0, cleanBase.length() - 1);
         }

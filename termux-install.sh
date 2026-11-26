@@ -124,7 +124,7 @@ EOF
 EOF
   cat > "$HOME/.shortcuts/Lanettirr-Config" <<EOF
 #!/usr/bin/env bash
-URL="http://127.0.0.1:${MEGA_PORT:-3001}/configure"
+URL="http://127.0.0.1:${MEGA_PORT:-17410}/configure"
 if command -v termux-open-url >/dev/null 2>&1; then
   termux-open-url "$URL"
 elif command -v am >/dev/null 2>&1; then
