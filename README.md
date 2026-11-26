@@ -90,3 +90,22 @@ Servisleri telefonunuzdan veya AIOStreams üzerinden dış erişimle kullanmak i
 - Proje lisansı: [LICENSE](LICENSE)
 - Üçüncü taraf lisans ve bildirimleri: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
+## Destek / Donate
+
+Projeyi desteklemek isterseniz aşağıdaki adresler üzerinden bağış yapabilirsiniz:
+
+| Varlık | Ağ | Adres |
+| :--- | :--- | :--- |
+| **USDT** | **X Layer** | `XKOde2f6fbcdace36d5ceebdf545e992d3036269259` |
+| **USDT** | **Tron (TRC20)** | `TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA` |
+
+## Star History
+
+<a href="https://www.star-history.com/#0mamiis/lanettirr&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=0mamiis/lanettirr&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=0mamiis/lanettirr&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=0mamiis/lanettirr&type=Date" />
+  </picture>
+</a>
+
