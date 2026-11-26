@@ -1,6 +1,6 @@
 # lanettirr
 
-Self-hosted **Lanettirr (Mega Bridge)** + **TR Hub** + **EN Hub** package — brings hundreds of torrent-free VOD sources across 48 languages to **Nuvio**, **CloudStream (CS3)**, and **Stremio / AIOStreams** with real `ffprobe` stream verification, automatic failover, and custom badges.
+Self-hosted **Lanettirr** package — brings hundreds of torrent-free VOD sources across 48 languages to **Nuvio**, **CloudStream (CS3)**, and **Stremio** with real `ffprobe` stream verification, automatic failover, and custom badges.
 
 Repository: https://github.com/0mamiis/lanettirr
 
@@ -71,9 +71,9 @@ To display stream card icons in the proper **Quality → Language/Dub → Contai
 
 - **Fusion Badges**: `http://127.0.0.1:3001/badges.json`
 
-### 4. Stremio / AIOStreams & Compatible Apps (Optional)
+### 4. Stremio & Compatible Apps (Optional)
 
-To use Lanettirr with Stremio, AIOStreams, or any Stremio-compatible client:
+To use Lanettirr with Stremio or any Stremio-compatible client:
 
 - **Stremio Manifest**: `http://127.0.0.1:3001/saved/manifest.json`
 
@@ -95,12 +95,12 @@ Lanettirr includes a native self-hosted CloudStream 3 repository that dynamicall
 - **Health check**: `http://127.0.0.1:3001/health`
 - **Auto-start on Windows boot**: Create a shortcut to `scripts/start-hidden.vbs` inside your Windows Startup folder (`shell:startup`) to launch the services silently in the background at login.
 
-## Optional: Phone / Remote Access & AIOStreams
+## Optional: Remote Access (Cloudflare Tunnel)
 
-To access your self-hosted instance from your phone or connect it to AIOStreams externally:
+To access your PC self-hosted instance remotely from another device:
 
 1. Copy `.env.example` and rename the copy to `.env`.
-2. Set `ENABLE_TUNNEL=1` inside `.env` and, if needed, fill in your AIOStreams variables (`AIOSTREAMS_BASE_URL`, `AIOSTREAMS_UUID`, `AIOSTREAMS_PASSWORD`).
+2. Set `ENABLE_TUNNEL=1` inside `.env`.
 3. Install `cloudflared` if it is not already installed (`winget install Cloudflare.cloudflared`), then restart services with `baslat.bat`.
 4. The generated tunnel URL is written to `.runtime/tunnel-url.txt`. The same `/configure`, `/saved/nuvio-repo/manifest.json`, `/saved/cs3/repo.json`, `/saved/manifest.json`, and `/badges.json` endpoints work over the tunnel URL as well.
 

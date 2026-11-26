@@ -116,7 +116,7 @@ if wait_http "http://127.0.0.1:$PORT/health" 20; then
   echo "  Nuvio Repo   : http://127.0.0.1:$PORT/saved/nuvio-repo/manifest.json"
   echo "  CloudStream  : http://127.0.0.1:$PORT/saved/cs3/repo.json"
   echo "  Fusion Badges: http://127.0.0.1:$PORT/badges.json"
-  echo "  Stremio/AIO  : http://127.0.0.1:$PORT/saved/manifest.json"
+  echo "  Stremio      : http://127.0.0.1:$PORT/saved/manifest.json"
   if command -v termux-toast >/dev/null 2>&1; then
     termux-toast "Lanettirr ready on :$PORT" >/dev/null 2>&1 || true
   fi

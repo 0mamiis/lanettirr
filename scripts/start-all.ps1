@@ -302,7 +302,7 @@ Write-Host ('  Lanettirr Repo : http://127.0.0.1:' + $megaP + '/saved/nuvio-repo
 Write-Host ('  Ayar Paneli    : http://127.0.0.1:' + $megaP + '/configure')
 Write-Host ('  CloudStream    : http://127.0.0.1:' + $megaP + '/saved/cs3/repo.json')
 Write-Host ('  Fusion Rozet   : http://127.0.0.1:' + $megaP + '/badges.json')
-Write-Host ('  Stremio / AIO  : http://127.0.0.1:' + $megaP + '/saved/manifest.json')
+Write-Host ('  Stremio        : http://127.0.0.1:' + $megaP + '/saved/manifest.json')
 Write-Host ('  Ham TR Hub     : http://127.0.0.1:' + $hubP + '/nuvio-repo/manifest.json')
 Write-Host ('  Ham EN Hub     : http://127.0.0.1:' + $hubP + '/en-repo/manifest.json')
 
