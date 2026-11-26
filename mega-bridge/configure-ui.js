@@ -373,15 +373,34 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.bl-sub{font-size:11px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
     '.bl-del{height:26px;padding:0 10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font:inherit;font-size:11px;cursor:pointer;flex-shrink:0}' +
     '.bl-del:hover{border-color:#f31260;color:#f31260}' +
-    '.don-desc{font-size:12px;color:var(--fg-muted);margin:0 0 10px}' +
-    '.don-list{display:flex;flex-direction:column;gap:8px}' +
-    '.don-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);background:var(--surface-2)}' +
-    '.don-meta{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}' +
-    '.don-net{font-size:11px;font-weight:600;color:var(--fg);letter-spacing:.02em}' +
-    '.don-addr{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:var(--code-fg);word-break:break-all;user-select:all}' +
-    '.don-copy{height:28px;padding:0 11px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font:inherit;font-size:11px;font-weight:500;cursor:pointer;flex-shrink:0;transition:border-color .12s,color .12s}' +
-    '.don-copy:hover{border-color:var(--primary);color:var(--primary)}' +
-    '.don-status{font-size:11px;color:var(--ok);font-weight:500;min-height:14px}' +
+    '.don-card{margin-top:20px;padding:18px;border-radius:20px;border:1px solid rgba(38,161,123,.32);background:linear-gradient(155deg,rgba(38,161,123,.10) 0%,var(--surface) 58%)}' +
+    '.don-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}' +
+    '.don-title-wrap{display:flex;align-items:center;gap:12px;min-width:0}' +
+    '.don-emblem{width:38px;height:38px;border-radius:999px;background:#26a17b;color:#fff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}' +
+    '.don-head-text{display:flex;flex-direction:column;gap:2px;min-width:0}' +
+    '.don-title{font-size:14px;font-weight:600;color:var(--fg);letter-spacing:-.01em}' +
+    '.don-desc{font-size:12px;color:var(--fg-muted);margin:0;line-height:1.45}' +
+    '.don-status{font-size:11px;font-weight:600;color:#26a17b;background:rgba(38,161,123,.14);border:1px solid rgba(38,161,123,.35);border-radius:999px;padding:4px 10px;white-space:nowrap;opacity:0;transform:translateY(2px);transition:opacity .15s,transform .15s}' +
+    '.don-status.is-show{opacity:1;transform:translateY(0)}' +
+    '.don-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}' +
+    '@media (max-width:720px){.don-grid{grid-template-columns:1fr}.don-head{flex-direction:column;align-items:flex-start}}' +
+    '.don-tile{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;border:1px solid var(--border);background:var(--surface-2);transition:border-color .15s}' +
+    '.don-tile.is-xlayer:hover{border-color:rgba(59,130,246,.5)}' +
+    '.don-tile.is-tron:hover{border-color:rgba(239,68,68,.5)}' +
+    '.don-tile-top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
+    '.don-coin{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--fg)}' +
+    '.don-dot{width:8px;height:8px;border-radius:999px;flex-shrink:0}' +
+    '.don-tile.is-xlayer .don-dot{background:#3b82f6}' +
+    '.don-tile.is-tron .don-dot{background:#ef4444}' +
+    '.don-net-pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;letter-spacing:.01em}' +
+    '.don-tile.is-xlayer .don-net-pill{background:rgba(59,130,246,.14);color:#60a5fa;border:1px solid rgba(59,130,246,.32)}' +
+    '.don-tile.is-tron .don-net-pill{background:rgba(239,68,68,.14);color:#f87171;border:1px solid rgba(239,68,68,.32)}' +
+    '.don-addr-box{padding:9px 11px;border-radius:12px;background:var(--code-bg);border:1px solid var(--border);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px;color:var(--code-fg);word-break:break-all;user-select:all;line-height:1.45}' +
+    '.don-copy{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;border:0;color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:filter .12s,background .15s}' +
+    '.don-copy:hover{filter:brightness(1.08)}' +
+    '.don-tile.is-xlayer .don-copy{background:#2563eb}' +
+    '.don-tile.is-tron .don-copy{background:#dc2626}' +
+    '.don-copy.is-done{background:#26a17b!important}' +
     '.hidden{display:none!important}' +
     '@media (max-width:640px){.hdr{flex-direction:column;align-items:flex-start}.ctrl-row{flex-direction:column;align-items:flex-start}.status{margin-inline-start:0;width:100%}.qual-grid,.qlim-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.field-grid{grid-template-columns:1fr}}' +
     '</style></head><body><main class="shell">' +
@@ -635,22 +654,39 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
         '</div>' +
       '</div>' +
     '</section>' +
-    '<section class="panel">' +
-      '<div class="panel-head">' +
-        '<span class="panel-title" data-i18n="secDonate">' + esc(tr('secDonate')) + '</span>' +
+    '<section class="don-card">' +
+      '<div class="don-head">' +
+        '<div class="don-title-wrap">' +
+          '<span class="don-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12"/><path d="M12 7v11"/><ellipse cx="12" cy="12.2" rx="6.5" ry="2.2"/></svg></span>' +
+          '<div class="don-head-text">' +
+            '<span class="don-title" data-i18n="secDonate">' + esc(tr('secDonate')) + '</span>' +
+            '<p class="don-desc" data-i18n="donateDesc">' + esc(tr('donateDesc')) + '</p>' +
+          '</div>' +
+        '</div>' +
         '<span class="don-status" id="donStatus"></span>' +
       '</div>' +
-      '<div class="panel-body">' +
-        '<p class="don-desc" data-i18n="donateDesc">' + esc(tr('donateDesc')) + '</p>' +
-        '<div class="don-list">' +
-          '<div class="don-item">' +
-            '<div class="don-meta"><span class="don-net">USDT · X Layer</span><span class="don-addr">XKOde2f6fbcdace36d5ceebdf545e992d3036269259</span></div>' +
-            '<button type="button" class="don-copy" data-don-addr="XKOde2f6fbcdace36d5ceebdf545e992d3036269259" data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</button>' +
+      '<div class="don-grid">' +
+        '<div class="don-tile is-xlayer">' +
+          '<div class="don-tile-top">' +
+            '<span class="don-coin"><span class="don-dot"></span>USDT</span>' +
+            '<span class="don-net-pill">X Layer</span>' +
           '</div>' +
-          '<div class="don-item">' +
-            '<div class="don-meta"><span class="don-net">USDT · Tron (TRC20)</span><span class="don-addr">TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA</span></div>' +
-            '<button type="button" class="don-copy" data-don-addr="TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA" data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</button>' +
+          '<div class="don-addr-box">XKOde2f6fbcdace36d5ceebdf545e992d3036269259</div>' +
+          '<button type="button" class="don-copy" data-don-addr="XKOde2f6fbcdace36d5ceebdf545e992d3036269259">' +
+            '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2"/></svg>' +
+            '<span data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="don-tile is-tron">' +
+          '<div class="don-tile-top">' +
+            '<span class="don-coin"><span class="don-dot"></span>USDT</span>' +
+            '<span class="don-net-pill">Tron · TRC20</span>' +
           '</div>' +
+          '<div class="don-addr-box">TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA</div>' +
+          '<button type="button" class="don-copy" data-don-addr="TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA">' +
+            '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2"/></svg>' +
+            '<span data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</span>' +
+          '</button>' +
         '</div>' +
       '</div>' +
     '</section>' +
@@ -1236,9 +1272,11 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  const ds = document.getElementById("donStatus");' +
     '  try {' +
     '    await navigator.clipboard.writeText(addr);' +
-    '    if (ds) { ds.textContent = t("donateCopied"); clearTimeout(donTimer); donTimer = setTimeout(() => { ds.textContent = ""; }, 2500); }' +
+    '    btn.classList.add("is-done");' +
+    '    setTimeout(() => btn.classList.remove("is-done"), 1400);' +
+    '    if (ds) { ds.textContent = t("donateCopied"); ds.classList.add("is-show"); clearTimeout(donTimer); donTimer = setTimeout(() => { ds.classList.remove("is-show"); }, 2200); }' +
     '  } catch {' +
-    '    if (ds) { ds.textContent = t("stSelectCopy"); clearTimeout(donTimer); donTimer = setTimeout(() => { ds.textContent = ""; }, 3000); }' +
+    '    if (ds) { ds.textContent = t("stSelectCopy"); ds.classList.add("is-show"); clearTimeout(donTimer); donTimer = setTimeout(() => { ds.classList.remove("is-show"); }, 2800); }' +
     '  }' +
     '}));' +
     'if (uiLangSel) uiLangSel.addEventListener("change", () => { applyUiLang(uiLangSel.value, true); saveUiPrefs(); });' +
