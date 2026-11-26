@@ -3993,7 +3993,7 @@ async function checkRemoteUpdate(force = false) {
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const latestVersion = (await res.text()).trim().replace(/^v/i, "");
-    if (!/^d+.d+(?:.d+)?/.test(latestVersion)) throw new Error("Invalid remote VERSION");
+    if (!/^[0-9]+[.][0-9]+(?:[.][0-9]+)?/.test(latestVersion)) throw new Error("Invalid remote VERSION");
     const data = {
       ok: true,
       currentVersion,
@@ -4048,7 +4048,7 @@ function startSelfUpdate(targetVersion) {
   const { spawn } = require("child_process");
   let cmd, args;
   if (upd.type === "ps1") {
-    const sysPs = path.join(process.env.WINDIR || "C:\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    const sysPs = path.join(process.env.WINDIR || "C:/Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
     cmd = fs.existsSync(sysPs) ? sysPs : "powershell.exe";
     args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", upd.scriptPath, "-FromUi", "-StatusFile", statusFile, "-Repo", UPDATE_REPO, "-Branch", UPDATE_BRANCH];
     if (cleanTarget) args.push("-TargetVersion", cleanTarget);
