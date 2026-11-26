@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Nuvio Mega Bridge — Stremio Addon
+ * Lanettirr — Multi-Language Direct Stream Hub
  *
  * Merges providers from 6 Nuvio repos into one Stremio addon.
  * Deduplicates by provider ID, using repo priority order.
@@ -143,6 +143,30 @@ function combineSignals(timeoutMs, extSignal) {
       if (extSignal) extSignal.removeEventListener('abort', onExt);
     }
   };
+}
+async function readResponseBuf(res, maxBytes) {
+  const cl = parseInt(res.headers.get('content-length') || '0', 10);
+  if (cl > maxBytes) {
+    try { await res.body?.cancel(); } catch {}
+    throw Object.assign(new Error('response too large'), { status: 413 });
+  }
+  if (!res.body) return Buffer.alloc(0);
+  const reader = res.body.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value && value.length) {
+      total += value.length;
+      if (total > maxBytes) {
+        try { await reader.cancel(); } catch {}
+        throw Object.assign(new Error('response too large'), { status: 413 });
+      }
+      chunks.push(Buffer.from(value));
+    }
+  }
+  return chunks.length === 1 ? chunks[0] : Buffer.concat(chunks, total);
 }
 const MAX_FFPROBE_CONCURRENCY = Math.max(1, Math.min(8, parseInt(process.env.MEGA_FFPROBE_CONC || '3', 10) || 3));
 let ffprobeActive = 0;
@@ -1126,8 +1150,16 @@ async function loadAll() {
   });
 
   // Add TR Hub as a direct local upstream provider (CS3 + all TR Nuvio repos)
+  loaded.push(buildTrHubProvider());
+
+  console.log(`\n  🎬  ${loaded.length} providers ready\n`);
+
+  return { loaded, meta: buildStremioMeta(loaded) };
+}
+
+function buildTrHubProvider() {
   const trHubImdbCache = new Map();
-  loaded.push({
+  return {
     meta: { id: 'trhub', name: 'TR Hub', supportedTypes: ['movie', 'tv'] },
     repo: { name: 'TR Hub' },
     _repoId: 'tr_trhub',
@@ -1184,19 +1216,16 @@ async function loadAll() {
         return [];
       }
     },
-  });
-
-  console.log(`\n  🎬  ${loaded.length} providers ready\n`);
-
-  // Build Stremio manifest
+  };
+}
+function buildStremioMeta(loaded) {
   const types = [...new Set(
     loaded.flatMap(p => (p.meta.supportedTypes || ['movie','tv'])
       .map(t => t === 'tv' || t === 'anime' ? 'series' : t)
       .filter(t => ['movie','series'].includes(t))
     )
   )];
-
-  const meta = {
+  return {
     id          : 'community.nuvio.mega.bridge',
     version     : getLocalVersion(),
     name        : 'Lanettirr',
@@ -1208,25 +1237,32 @@ async function loadAll() {
     catalogs    : [],
     behaviorHints: { configurable:false, configurationRequired:false },
   };
-
-  return { loaded, meta };
 }
-
 // ─── Cache management ─────────────────────────────────────────────────────────
-async function ensureProviders() {
-  if (providers && (Date.now() - lastLoad) < CACHE_TTL_MS) return;
+let enProvidersLoaded = false;
+async function ensureProviders(opts = {}) {
+  const needEn = opts.needEn !== false;
+  if (!needEn) {
+    if (!providers || !providers.length) {
+      providers = [buildTrHubProvider()];
+      stremioMeta = buildStremioMeta(providers);
+    }
+    return;
+  }
+  if (enProvidersLoaded && providers && (Date.now() - lastLoad) < CACHE_TTL_MS) return;
   if (loadPromise) return loadPromise;
 
   loadPromise = loadAll()
     .then(({ loaded, meta }) => {
       providers   = loaded;
       stremioMeta = meta;
+      enProvidersLoaded = loaded.length > 1;
       lastLoad    = loaded.length > 5 ? Date.now() : (Date.now() - CACHE_TTL_MS + 30000);
       loadPromise = null;
     })
     .catch((e) => {
       console.error('Fatal load error:', e.message);
-      if (!providers) providers = [];
+      if (!providers || !providers.length) { providers = [buildTrHubProvider()]; stremioMeta = buildStremioMeta(providers); }
       loadPromise = null;
     });
 
@@ -1369,6 +1405,7 @@ async function loadLangProviders(code) {
       } catch {}
     });
     langProviderCache.set(code, { t: Date.now(), list: loaded });
+    capMap(langProviderCache, 12);
     console.log("  [" + code.toUpperCase() + "] loaded " + loaded.length + " providers (no torrents)");
     return loaded;
   })().finally(() => langLoadPromises.delete(code));
@@ -1376,8 +1413,8 @@ async function loadLangProviders(code) {
   return prom;
 }
 async function getProvidersForLangs(langs) {
-  await ensureProviders();
   const want = new Set((langs && langs.length ? langs : ["tr", "en"]).map(s => s.toLowerCase()));
+  await ensureProviders({ needEn: [...want].some(c => c !== "tr") });
   const out = [];
   const seenById = new Map();
   const addP = (p) => {
@@ -1677,16 +1714,20 @@ async function verifyStreamReady(cand, timeoutMs) {
       const subLine = bestUri || lines.find(x => x && !x.startsWith("#"));
       if (!subLine) return { ok: false, reason: "empty_master" };
       mediaBase = new URL(subLine, mediaBase).href;
+      if (!isAllowedProxyUrl(mediaBase)) return { ok: false, reason: "blocked_url" };
       const r2 = await fetch(mediaBase, { headers, signal: AbortSignal.timeout(rem()) });
+      if (r2.url && !isAllowedProxyUrl(r2.url)) { try { await r2.body?.cancel(); } catch {} return { ok: false, reason: "blocked_url" }; }
       if (!r2.ok) return { ok: false, reason: "sub_http_" + r2.status };
       mediaBase = r2.url || mediaBase;
-      mediaTxt = (await r2.text()).replace(/^\uFEFF/, "");
+      mediaTxt = (await readResponseBuf(r2, 2 * 1024 * 1024)).toString("utf8").replace(/^\uFEFF/, "");
       if (!/^#EXTM3U/i.test(mediaTxt.trim())) return { ok: false, reason: "sub_not_m3u8" };
     }
     const segLine = mediaTxt.split(/\r?\n/).map(x => x.trim()).find(x => x && !x.startsWith("#"));
     if (!segLine) return { ok: false, reason: "no_segments" };
     const segUrl = new URL(segLine, mediaBase).href;
+    if (!isAllowedProxyUrl(segUrl)) return { ok: false, reason: "blocked_url" };
     const r3 = await fetch(segUrl, { headers, signal: AbortSignal.timeout(rem()) });
+    if (r3.url && !isAllowedProxyUrl(r3.url)) { try { await r3.body?.cancel(); } catch {} return { ok: false, reason: "blocked_url" }; }
     if (!r3.ok) { try { await r3.body?.cancel(); } catch {} return { ok: false, reason: "seg_http_" + r3.status }; }
     const ct3 = String(r3.headers.get("content-type") || "").toLowerCase();
     const reader = r3.body?.getReader();
@@ -1711,8 +1752,9 @@ async function verifyStreamReady(cand, timeoutMs) {
   try {
     if (isHls) {
       const r1 = await fetch(cand.url, { headers, signal: AbortSignal.timeout(rem()) });
+      if (r1.url && !isAllowedProxyUrl(r1.url)) { try { await r1.body?.cancel(); } catch {} return { ok: false, reason: "blocked_url" }; }
       if (!r1.ok) return { ok: false, reason: "http_" + r1.status };
-      const t1 = (await r1.text()).replace(/^\uFEFF/, "");
+      const t1 = (await readResponseBuf(r1, 2 * 1024 * 1024)).toString("utf8").replace(/^\uFEFF/, "");
       if (!/^#EXTM3U/i.test(t1.trim())) return { ok: false, reason: "not_m3u8" };
       return await verifyHlsText(t1, r1.url || cand.url);
     } else {
@@ -1721,6 +1763,7 @@ async function verifyStreamReady(cand, timeoutMs) {
         try { await r.body?.cancel(); } catch {}
         r = await fetch(cand.url, { headers, signal: AbortSignal.timeout(rem()) });
       }
+      if (r.url && !isAllowedProxyUrl(r.url)) { try { await r.body?.cancel(); } catch {} return { ok: false, reason: "blocked_url" }; }
       if (!r.ok && r.status !== 206) { try { await r.body?.cancel(); } catch {} return { ok: false, reason: "http_" + r.status }; }
       const ct = String(r.headers.get("content-type") || "").toLowerCase();
       const reader = r.body?.getReader();
@@ -2571,7 +2614,7 @@ function buildNuvioRepoManifest(cfg) {
       name: up + " Hub",
       description: meta.name + " dogrudan akis kaynaklari (torrent yok)",
       version: "2.0.0",
-      author: "Nuvio Mega Hub",
+      author: "Lanettirr",
       supportedTypes: ["movie", "tv"],
       filename: "p/" + code + ".js",
       enabled: true,
@@ -3637,8 +3680,12 @@ async function fetchBody(u, h, extSignal) {
     const sig = combineSignals(30000, extSignal);
     try {
       const r = await fetch(u, { headers: effH, signal: sig.signal });
+      if (r.url && !isAllowedProxyUrl(r.url)) {
+        try { await r.body?.cancel(); } catch {}
+        throw Object.assign(new Error('Forbidden proxy target'), { status: 403 });
+      }
       if (!r.ok) throw Object.assign(new Error('upstream ' + r.status), { status: r.status });
-      const v = { t: Date.now(), buf: Buffer.from(await r.arrayBuffer()), ct: r.headers.get('content-type'), finalUrl: r.url || u };
+      const v = { t: Date.now(), buf: await readResponseBuf(r, 16 * 1024 * 1024), ct: r.headers.get('content-type'), finalUrl: r.url || u };
       if (v.buf.length <= BODY_CACHE_MAX_ITEM_BYTES) setBodyCache(cacheKey, v);
       return v;
     } finally {
@@ -3662,7 +3709,7 @@ async function handleProxy(req, res, token) {
   const ac = new AbortController();
   res.on('close', () => { if (!res.writableEnded) ac.abort(); });
   const proto = req.headers['x-forwarded-proto'] || 'http';
-  const base = proto + '://' + req.headers.host;
+  const base = proto + '://' + (req.headers.host || ('127.0.0.1:' + PORT));
   try {
     const effH = ensureBrowserHeaders(spec.h);
     const cacheKey = spec.u + '|' + stableHeaderKey(effH);
@@ -3689,7 +3736,8 @@ async function handleProxy(req, res, token) {
         markPlayCandidateFailed(spec, 'proxy_http_' + up.status, false);
       }
       const outH = { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': up.headers.get('accept-ranges') || 'bytes' };
-      for (const hk of ['content-type', 'content-length', 'content-range']) { const hv = up.headers.get(hk); if (hv) outH[hk] = hv; }
+      const hasEnc = Boolean(up.headers.get('content-encoding'));
+      for (const hk of ['content-type', 'content-length', 'content-range']) { if (hk === 'content-length' && hasEnc) continue; const hv = up.headers.get(hk); if (hv) outH[hk] = hv; }
       res.writeHead(up.status, outH);
       if (req.method === 'HEAD' || !up.body) { res.end(); return; }
       const src = Readable.fromWeb(up.body);
@@ -3716,9 +3764,10 @@ async function handleProxy(req, res, token) {
       if (!up.ok) throw Object.assign(new Error('upstream ' + up.status), { status: up.status });
       const ct = String(up.headers.get('content-type') || '');
       const cl = parseInt(up.headers.get('content-length') || '0', 10);
-      if (cl > BODY_CACHE_MAX_ITEM_BYTES && !/mpegurl/i.test(ct) && !isLikelyHlsUrl(up.url || spec.u)) {
+      if ((cl === 0 || cl > BODY_CACHE_MAX_ITEM_BYTES) && !/mpegurl/i.test(ct) && !isLikelyHlsUrl(up.url || spec.u)) {
         const outH = { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': up.headers.get('accept-ranges') || 'bytes' };
-        for (const hk of ['content-type', 'content-length', 'content-range']) { const hv = up.headers.get(hk); if (hv) outH[hk] = hv; }
+        const hasEnc = Boolean(up.headers.get('content-encoding'));
+        for (const hk of ['content-type', 'content-length', 'content-range']) { if (hk === 'content-length' && hasEnc) continue; const hv = up.headers.get(hk); if (hv) outH[hk] = hv; }
         res.writeHead(up.status, outH);
         if (req.method === 'HEAD' || !up.body) { res.end(); return; }
         const src = Readable.fromWeb(up.body);
@@ -3727,7 +3776,7 @@ async function handleProxy(req, res, token) {
         await new Promise((resolve) => pipeline(src, res, () => { res.removeListener('close', onClose); resolve(); }));
         return;
       }
-      const buf = Buffer.from(await up.arrayBuffer());
+      const buf = await readResponseBuf(up, BODY_CACHE_MAX_ITEM_BYTES);
       r = { t: Date.now(), buf, ct: up.headers.get('content-type'), finalUrl: up.url || spec.u };
       if (buf.length <= BODY_CACHE_MAX_ITEM_BYTES) setBodyCache(cacheKey, r);
     } else {
@@ -3941,10 +3990,7 @@ function getUpdateStatusFile() {
 
 function writeUpdateStatusFile(obj) {
   const file = getUpdateStatusFile();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  const tmp = file + ".tmp." + process.pid + "." + Date.now();
-  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2), "utf8");
-  fs.renameSync(tmp, file);
+  writeJsonAtomic(file, JSON.stringify(obj, null, 2));
 }
 
 function readUpdateStatus() {
@@ -4266,6 +4312,7 @@ function cs3LinkType(urlStr, isHls) {
   return "VIDEO";
 }
 
+let badgesJsonCache = null;
 const server = http.createServer(async (req, res) => {
  try {
   if (req.method === 'OPTIONS') {
@@ -4281,9 +4328,17 @@ const server = http.createServer(async (req, res) => {
   }
   if (url === '/badges.json' && (req.method === 'GET' || req.method === 'HEAD')) {
     try {
-      const raw = fs.readFileSync(path.join(__dirname, 'badges-custom.json'));
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' });
-      res.end(req.method === 'HEAD' ? undefined : raw);
+      const bPath = path.join(__dirname, 'badges-custom.json');
+      const mtimeMs = fs.statSync(bPath).mtimeMs;
+      if (!badgesJsonCache || badgesJsonCache.mtimeMs !== mtimeMs) {
+        const raw = fs.readFileSync(bPath);
+        const etag = 'W/"' + crypto.createHash('sha1').update(raw).digest('hex') + '"';
+        badgesJsonCache = { mtimeMs, buf: raw, etag };
+      }
+      const bHdrs = { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': badgesJsonCache.buf.length, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300', 'ETag': badgesJsonCache.etag };
+      if (req.headers['if-none-match'] === badgesJsonCache.etag) { res.writeHead(304, bHdrs); res.end(); return; }
+      res.writeHead(200, bHdrs);
+      res.end(req.method === 'HEAD' ? undefined : badgesJsonCache.buf);
     } catch {
       json(res, 404, { error: 'badges-custom.json not found' });
     }
@@ -4467,7 +4522,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (routeUrl === "/manifest.json") {
-    await ensureProviders();
+    await ensureProviders({ needEn: (cfg.langs || ["tr", "en"]).some(c => c !== "tr") });
     if (!stremioMeta) { json(res, 503, { error:"Loading providers, retry in 30s" }); return; }
     if (cfgRaw) { json(res, 200, manifestForConfig(cfg)); return; }
     json(res, 200, { ...stremioMeta, behaviorHints: { configurable: true, configurationRequired: false } });
@@ -4544,7 +4599,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (routeUrl === "/cs3/streams" && req.method === "GET") {
-    await ensureProviders();
+    const preCfg = routePrefix ? cfg : parseConfig(loadSavedConfigStr());
+    await ensureProviders({ needEn: orderHubLangs(preCfg).some(c => c !== "tr") });
     try {
       const q = new URL(req.url, origin).searchParams;
       const mt = (q.get("type") || "movie").toLowerCase();
@@ -4631,9 +4687,9 @@ const server = http.createServer(async (req, res) => {
 
   const nrh = routeUrl.match(/^\/nuvio-repo\/hub\/([a-z0-9_]+)$/i);
   if (nrh) {
-    await ensureProviders();
     let seqGate = null;
     let slug = nrh[1].toLowerCase();
+    await ensureProviders({ needEn: slug !== "tr" });
     try {
       const q = new URL(req.url, origin).searchParams;
       const tmdbId = (q.get("tmdbId") || "").trim();
@@ -4715,7 +4771,7 @@ const server = http.createServer(async (req, res) => {
 
   const m = routeUrl.match(/^\/stream\/(movie|series)\/(.+)\.json$/);
   if (m) {
-    await ensureProviders();
+    await ensureProviders({ needEn: (cfg.langs || ["tr", "en"]).some(c => c !== "tr") });
     if (!providers?.length) { json(res, 200, { streams:[] }); return; }
     try {
       const sid = decodeURIComponent(m[2]);
@@ -4805,7 +4861,7 @@ const server = http.createServer(async (req, res) => {
 
   const mm = routeUrl.match(/^\/m\/(movie|series)\/(.+?)(?:~([a-z_]+))?(?:~(\d+p))?\.m3u8$/);
   if (mm) {
-    await ensureProviders();
+    await ensureProviders({ needEn: (cfg.langs || ["tr", "en"]).some(c => c !== "tr") });
     try {
       const pl = await buildMaster(mm[1], decodeURIComponent(mm[2]), origin, mm[4] || "", cfg.langs, mm[3] || "", cfg.timeoutSec, cfg.disabledRepos, cfg.disabledProvs);
       if (!pl) { json(res, 404, { error: "no hls" }); return; }
@@ -4828,10 +4884,11 @@ const server = http.createServer(async (req, res) => {
 const onListen = async () => {
   const dispHost = HOST || '127.0.0.1';
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  🎬  Lanettirr — Nuvio Mega Bridge');
+  console.log('  🎬  Lanettirr — Direct Stream Hub');
   console.log(`  📡  http://${dispHost}:${PORT} (HUB_URL=${HUB_URL})`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  await ensureProviders();
+  const initCfg = parseConfig(loadSavedConfigStr());
+  await ensureProviders({ needEn: (initCfg.langs || ["tr", "en"]).some(c => c !== "tr") });
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`  ✅  Configure UI : http://${dispHost}:${PORT}/configure`);
   console.log(`  ✅  Nuvio Repo   : http://${dispHost}:${PORT}/saved/nuvio-repo/manifest.json`);

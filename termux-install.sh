@@ -124,7 +124,18 @@ EOF
 EOF
   cat > "$HOME/.shortcuts/Lanettirr-Config" <<EOF
 #!/usr/bin/env bash
-URL="http://127.0.0.1:${MEGA_PORT:-17410}/configure"
+INSTALL_DIR="$INSTALL_DIR"
+EOF
+  cat >> "$HOME/.shortcuts/Lanettirr-Config" <<'EOF'
+PORT_VAL=""
+if [ -f "$INSTALL_DIR/.env" ]; then
+  PORT_VAL="$(grep -E '^[[:space:]]*MEGA_PORT[[:space:]]*=' "$INSTALL_DIR/.env" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed 's/#.*//' | tr -d "\"'\r\t " || true)"
+  if [ -z "$PORT_VAL" ]; then
+    PORT_VAL="$(grep -E '^[[:space:]]*PORT[[:space:]]*=' "$INSTALL_DIR/.env" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed 's/#.*//' | tr -d "\"'\r\t " || true)"
+  fi
+fi
+case "$PORT_VAL" in ''|*[!0-9]*) PORT_VAL="" ;; esac
+URL="http://127.0.0.1:${PORT_VAL:-${MEGA_PORT:-${PORT:-17410}}}/configure"
 if command -v termux-open-url >/dev/null 2>&1; then
   termux-open-url "$URL"
 elif command -v am >/dev/null 2>&1; then

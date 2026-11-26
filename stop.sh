@@ -13,12 +13,9 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-pkill -f "mega-bridge/index.js" >/dev/null 2>&1 || true
-pkill -f "trhub/hub.mjs" >/dev/null 2>&1 || true
-pkill -f "kraptor-bridge/server.mjs" >/dev/null 2>&1 || true
-pkill -f "egress/egress.mjs" >/dev/null 2>&1 || true
-pkill -f "cs-host/out.*Host" >/dev/null 2>&1 || true
-pkill -f "run-host.sh" >/dev/null 2>&1 || true
+for pat in "$ROOT/mega-bridge/index.js" "$ROOT/trhub/hub.mjs" "$ROOT/kraptor-bridge/server.mjs" "$ROOT/egress/egress.mjs" "mega-bridge/index.js" "trhub/hub.mjs" "kraptor-bridge/server.mjs" "egress/egress.mjs" "cs-host/out.*Host" "run-host.sh"; do
+  pkill -f "$pat" >/dev/null 2>&1 || true
+done
 
 if command -v termux-wake-unlock >/dev/null 2>&1; then
   termux-wake-unlock >/dev/null 2>&1 || true

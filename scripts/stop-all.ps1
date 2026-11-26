@@ -1,6 +1,9 @@
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $PidFile = Join-Path $Root '.runtime\pids.json'
+$SpecFile = Join-Path $Root '.runtime\watchdog-specs.json'
+
+Remove-Item -LiteralPath $SpecFile -Force -ErrorAction SilentlyContinue
 
 if (-not (Test-Path -LiteralPath $PidFile)) {
     Write-Host 'Calisan kayitli Lanettirr servisi bulunamadi (.runtime\pids.json yok).' -ForegroundColor Yellow
@@ -31,5 +34,6 @@ if ($data -and $data.processes) {
 }
 
 Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $SpecFile -Force -ErrorAction SilentlyContinue
 Write-Host ('Toplam ' + $stopped + ' servis durduruldu.') -ForegroundColor Green
 

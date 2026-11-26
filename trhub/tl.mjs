@@ -11,7 +11,14 @@ import { makePieceStore } from './tl-store.mjs';
 const TL_PORT = Number(process.env.TL_PORT || 18100);
 const SEG = 6.4;   // 300 AAC cercevesi: ses parcalari birbirine tam oturur
 const DIR = path.join(os.tmpdir(), 'trhub-tl');
-fs.mkdirSync(DIR, { recursive: true });
+let tlRuntimeReady = false;
+function ensureTlRuntime() {
+  if (!tlRuntimeReady) {
+    tlRuntimeReady = true;
+    try { fs.mkdirSync(DIR, { recursive: true }); } catch {}
+    setInterval(housekeeping, 2 * 60 * 1000).unref();
+  }
+}
 const TRACKERS = ['udp://tracker.opentrackr.org:1337/announce', 'udp://open.stealth.si:80/announce', 'udp://tracker.torrent.eu.org:451/announce', 'udp://exodus.desync.com:6969/announce', 'udp://open.demonii.com:1337/announce', 'udp://tracker.tiny-vps.com:6969/announce', 'udp://explodie.org:6969/announce', 'udp://tracker.moeking.me:6969/announce', 'udp://open.tracker.cl:1337/announce', 'wss://tracker.webtorrent.dev', 'wss://tracker.openwebtorrent.com'];
 const FFMPEG = ffmpegPath();
 const FFPROBE = FFMPEG.replace(/ffmpeg(\.exe)?$/i, 'ffprobe$1');
@@ -57,13 +64,13 @@ async function housekeeping() {
     for (const e of entries) { if (total <= cfg.capBytes) break; fs.rmSync(e.p, { recursive: true, force: true }); total -= e.s; log('onbellek temizlendi', e.n); }
   } catch (e) { log('housekeeping', e.message); }
 }
-setInterval(housekeeping, 2 * 60 * 1000).unref();
 
 
 // ---------- torrent ----------
 let client = null;
 async function engine() {
   if (client) return client;
+  ensureTlRuntime();
   const { default: WebTorrent } = await import('webtorrent');
   const nt = nuvioTorrentInfo();
   client = new WebTorrent({ maxConns: nt.maxConns, uploadLimit: nt.upload ? -1 : 1 });
@@ -212,6 +219,7 @@ async function dubSegmentReal(s, k, n) {
 // ---------- oturum ----------
 const sessions = new Map();
 export async function session({ hash, idx, extraTrackers, dubsProvider, maxDubs = 8 }) {
+  ensureTlRuntime();
   touch(hash);
   const key = hash.toLowerCase() + '-' + (idx ?? 'a');
   let p = sessions.get(key);
@@ -231,6 +239,7 @@ export async function session({ hash, idx, extraTrackers, dubsProvider, maxDubs 
 }
 
 export async function sessionUrl({ key, url, maxDubs = 8, dubsProvider }) {
+  ensureTlRuntime();
   let p = sessions.get(key);
   if (!p) {
     p = (async () => {

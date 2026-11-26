@@ -79,7 +79,7 @@ async function curlFetch(p, ua) {
 	else if (p.bodyKind === "base64" && p.bodyBase64) { args.push("--data-binary", "@-"); input = Buffer.from(String(p.bodyBase64), "base64"); }
 	args.push(url.toString());
 	const wout = await new Promise((resolve, reject) => {
-		const cp = execFile("curl.exe", args, { maxBuffer: 1024 * 1024, encoding: "utf8" }, (err, stdout) => (stdout ? resolve(stdout) : reject(err || new Error("curl failed"))));
+		const cp = execFile(process.platform === "win32" ? "curl.exe" : "curl", args, { maxBuffer: 1024 * 1024, encoding: "utf8", windowsHide: true }, (err, stdout) => (stdout ? resolve(stdout) : reject(err || new Error("curl failed"))));
 		if (input) { cp.stdin.write(input); } cp.stdin.end();
 	});
 	const m = String(wout).match(/^(\d+)\|([\s\S]*)$/);

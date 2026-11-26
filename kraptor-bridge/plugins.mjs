@@ -9,6 +9,8 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(dir, "cache");
 fs.mkdirSync(CACHE, { recursive: true });
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+const CURL_BIN = process.platform === "win32" ? "curl.exe" : "curl";
+const DEV_NULL = process.platform === "win32" ? "NUL" : "/dev/null";
 
 export const REPOS = [
 	{ id: "hansmega", group: "tr", url: "https://raw.githubusercontent.com/pnthancyb/hans-mega/main/manifest.json" },
@@ -35,7 +37,7 @@ export function curlText(url, { headers = {}, referer, maxTime = 30 } = {}) {
 	if (referer) args.push("-e", referer);
 	for (const [k, v] of Object.entries(headers)) args.push("-H", k + ": " + v);
 	args.push(url);
-	return execFileSync("curl.exe", args, { maxBuffer: 30 * 1024 * 1024 }).toString("utf8");
+	return execFileSync(CURL_BIN, args, { maxBuffer: 30 * 1024 * 1024, windowsHide: true }).toString("utf8");
 }
 const key = (s) => crypto.createHash("sha1").update(s).digest("hex").slice(0, 16);
 export function cachedText(url, ttlMs = 6 * 3600 * 1000) {
@@ -62,12 +64,12 @@ const RES = (q) => { const m = String(q || "").match(/(\d{3,4})p|(4k|2160|1440|2
 export const resOf = RES;
 
 function curlHead(url, headers, referer, range) {
-	const args = ["-s", "-L", "-m", "25", "-A", UA, "-D", "-", "-o", "NUL"];
+	const args = ["-s", "-L", "-m", "25", "-A", UA, "-D", "-", "-o", DEV_NULL];
 	if (range) args.push("-r", range);
 	if (referer) args.push("-e", referer);
 	for (const [k, v] of Object.entries(headers || {})) args.push("-H", k + ": " + v);
 	args.push(url);
-	const out = execFileSync("curl.exe", args, { maxBuffer: 5 * 1024 * 1024 }).toString("utf8");
+	const out = execFileSync(CURL_BIN, args, { maxBuffer: 5 * 1024 * 1024, windowsHide: true }).toString("utf8");
 	const blocks = out.split(/\r?\n\r?\n/).filter((b) => /^HTTP\//.test(b.trim()));
 	const last = blocks[blocks.length - 1] || "";
 	const status = Number(last.match(/^HTTP\/[\d.]+ (\d+)/)?.[1] || 0);

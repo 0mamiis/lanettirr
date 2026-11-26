@@ -8,7 +8,7 @@ export const NATIVE_REPOS={
 const cache=new Map();
 async function get(url){
  const old=cache.get(url);if(old&&Date.now()-old.time<3600000)return old.text;
- try{const r=await fetch(url,{signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('upstream HTTP '+r.status);const text=await r.text();cache.set(url,{time:Date.now(),text});return text;}
+ try{const r=await fetch(url,{signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('upstream HTTP '+r.status);const text=await r.text();cache.set(url,{time:Date.now(),text});while(cache.size>100)cache.delete(cache.keys().next().value);return text;}
  catch(e){if(old)return old.text;throw e;}
 }
 export async function nativeRepoResponse(route,req,res){

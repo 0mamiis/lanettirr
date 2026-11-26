@@ -21,7 +21,7 @@ public class Host {
   static final String PLUGINS_URL = env("BB_PLUGINS_URL", "https://raw.githubusercontent.com/F0Rextasy/bigbullapp-cs/builds/plugins.json");
   static final Path CACHE = Paths.get(env("BB_CACHE", "cache"));
   static final long SYNC_MS = Long.parseLong(env("BB_SYNC_MIN", "30")) * 60_000L;
-  static final ExecutorService POOL = Executors.newCachedThreadPool(r -> { Thread t = new Thread(r, "bb-worker"); t.setDaemon(true); return t; });
+  static final ExecutorService POOL = boundedPool(envInt("BB_THREADS", 12), "bb-worker", true);
   static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).connectTimeout(Duration.ofSeconds(15)).build();
   static final ObjectMapper MAPPER = new ObjectMapper();
   static final Map<String, Entry> REG = new ConcurrentHashMap<>();   // plugin internalName -> entry
@@ -31,10 +31,21 @@ public class Host {
 
   static class Entry {
     String name, key, version, lang, url; int status; List<String> tvTypes = new ArrayList<>();
-    List<Object> providers = new ArrayList<>(); String error; AtomicInteger ok = new AtomicInteger(), fail = new AtomicInteger();
+    List<Object> providers = new ArrayList<>(); URLClassLoader loader; String error; AtomicInteger ok = new AtomicInteger(), fail = new AtomicInteger();
   }
 
   static String env(String k, String d) { String v = System.getenv(k); return v == null || v.isBlank() ? d : v; }
+  static int envInt(String k, int d) { try { return Integer.parseInt(env(k, String.valueOf(d)).trim()); } catch (Throwable t) { return d; } }
+  static ExecutorService boundedPool(int maxThreads, String name, boolean daemon) {
+    int n = Math.max(2, Math.min(32, maxThreads));
+    ThreadPoolExecutor ex = new ThreadPoolExecutor(n, n, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), r -> {
+      Thread t = new Thread(r, name);
+      t.setDaemon(daemon);
+      return t;
+    });
+    ex.allowCoreThreadTimeOut(true);
+    return ex;
+  }
   static void log(String m) { System.out.println(java.time.LocalTime.now().withNano(0) + " " + m); System.out.flush(); }
 
   // ---- plugin sync ----
@@ -105,16 +116,22 @@ public class Host {
     for (JsonNode t : p.path("tvTypes")) e.tvTypes.add(t.asText());
     synchronized (LOAD_LOCK) {
       URLClassLoader cl = new URLClassLoader(new URL[]{jar.toUri().toURL()}, Host.class.getClassLoader());
-      Class<?> pc = Class.forName(pluginClass, true, cl);
-      Object plugin = pc.getDeclaredConstructor().newInstance();
-      List<Object> all = allProviders(); int before = all.size();
-      boolean did = false;
-      for (Method m : pc.getMethods()) if (m.getName().equals("load") && m.getParameterCount() == 1) { m.invoke(plugin, new android.content.Context()); did = true; break; }
-      if (!did) pc.getMethod("load").invoke(plugin);
-      all = allProviders();
-      e.providers = new ArrayList<>(all.subList(before, all.size()));
-      if (old != null) { removeProviders(old); }
-      REG.put(name, e);
+      try {
+        Class<?> pc = Class.forName(pluginClass, true, cl);
+        Object plugin = pc.getDeclaredConstructor().newInstance();
+        List<Object> all = allProviders(); int before = all.size();
+        boolean did = false;
+        for (Method m : pc.getMethods()) if (m.getName().equals("load") && m.getParameterCount() == 1) { m.invoke(plugin, new android.content.Context()); did = true; break; }
+        if (!did) pc.getMethod("load").invoke(plugin);
+        all = allProviders();
+        e.providers = new ArrayList<>(all.subList(before, all.size()));
+        e.loader = cl;
+        if (old != null) { removeProviders(old); }
+        REG.put(name, e);
+      } catch (Throwable t) {
+        try { cl.close(); } catch (Throwable ignored) {}
+        throw t;
+      }
     }
     log("plugin " + name + " v" + e.version + " -> " + e.providers.size() + " provider(s)");
   }
@@ -123,7 +140,7 @@ public class Host {
     Class<?> holder = Class.forName("com.lagradost.cloudstream3.APIHolder");
     return (List<Object>) holder.getMethod("getAllProviders").invoke(holder.getField("INSTANCE").get(null));
   }
-  static void removeProviders(Entry e) { if (e == null) return; try { allProviders().removeAll(e.providers); } catch (Throwable ignored) {} }
+  static void removeProviders(Entry e) { if (e == null) return; try { allProviders().removeAll(e.providers); } catch (Throwable ignored) {} if (e.loader != null) { try { e.loader.close(); } catch (Throwable ignored) {} e.loader = null; } }
 
   static void dex2jar(Path in, Path out) throws Exception {
     boolean win = System.getProperty("os.name").toLowerCase().contains("win");
@@ -170,14 +187,17 @@ public class Host {
     final Method mm = m; return blocking(c -> invoke(mm, prov, url, c));
   }
   @SuppressWarnings({"rawtypes", "unchecked"})
-  static Map<String, Object> links(Object prov, String data) throws Exception {
+  static Map<String, Object> links(Entry e, Object prov, String data) throws Exception {
     List<Object> links = Collections.synchronizedList(new ArrayList<>()), subs = Collections.synchronizedList(new ArrayList<>());
     Method m = null; for (Method x : prov.getClass().getMethods()) if (x.getName().equals("loadLinks") && x.getParameterCount() == 5) m = x;
     final Method mm = m;
     kotlin.jvm.functions.Function1 onSub = s -> { subs.add(s); return kotlin.Unit.INSTANCE; };
     kotlin.jvm.functions.Function1 onLink = l -> { links.add(l); return kotlin.Unit.INSTANCE; };
     Future<Object> f = POOL.submit(() -> blocking(c -> invoke(mm, prov, data, false, onSub, onLink, c)));
-    try { f.get(45, TimeUnit.SECONDS); } catch (TimeoutException te) { f.cancel(true); } catch (ExecutionException ee) { if (links.isEmpty()) throw ee; }
+    try { f.get(45, TimeUnit.SECONDS); }
+    catch (TimeoutException te) { f.cancel(true); }
+    catch (ExecutionException ee) { if (links.isEmpty()) { if (e != null) e.fail.incrementAndGet(); Throwable c2 = ee.getCause(); throw new RuntimeException(c2 == null ? ee : c2); } }
+    if (e != null) e.ok.incrementAndGet();
     Map<String, Object> out = new LinkedHashMap<>(); out.put("links", new ArrayList<>(links)); out.put("subs", new ArrayList<>(subs)); return out;
   }
 
@@ -259,7 +279,7 @@ public class Host {
       try {
         if (path.equals("/search")) reply(ex, 200, json(timed(en, 25000, () -> search(prov, q.get("q")))));
         else if (path.equals("/load")) reply(ex, 200, json(timed(en, 30000, () -> load(prov, q.get("url")))));
-        else if (path.equals("/links")) reply(ex, 200, json(timed(en, 55000, () -> links(prov, q.get("data")))));
+        else if (path.equals("/links")) reply(ex, 200, json(links(en, prov, q.get("data"))));
         else reply(ex, 404, "{\"error\":\"not found\"}");
       } catch (RuntimeException re) { log("ERR " + path + " " + q.getOrDefault("p", "") + ": " + describe(re)); reply(ex, 200, "{\"error\":" + json(describe(re)) + "}"); }
     } catch (Throwable t) { reply(ex, 500, "{\"error\":" + json(String.valueOf(t)) + "}"); }
@@ -268,7 +288,7 @@ public class Host {
   public static void main(String[] a) throws Exception {
     int port = Integer.parseInt(env("BB_PORT", "7200"));
     HttpServer s = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
-    s.setExecutor(Executors.newCachedThreadPool(r -> { Thread t = new Thread(r, "bb-http"); t.setDaemon(false); return t; }));
+    s.setExecutor(boundedPool(envInt("BB_HTTP_THREADS", 16), "bb-http", false));
     s.createContext("/", Host::handle); s.start();
     log("bigbull host on http://127.0.0.1:" + port);
     POOL.submit(Host::sync);

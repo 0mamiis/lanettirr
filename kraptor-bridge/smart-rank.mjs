@@ -106,9 +106,11 @@ export async function measureLatency(url) {
       try { await response.body?.cancel(); } catch {}
     }
     probeCache.set(url, { at: Date.now(), ms: ok ? ms : null, height, turkishAudio });
+    while (probeCache.size > 300) probeCache.delete(probeCache.keys().next().value);
     return ok ? { ms, height, turkishAudio } : null;
   } catch {
     probeCache.set(url, { at: Date.now(), ms: null, height: 0 });
+    while (probeCache.size > 300) probeCache.delete(probeCache.keys().next().value);
     return null;
   } finally {
     clearTimeout(timer);

@@ -36,7 +36,14 @@ const DEFAULTS = {
   nuvioRepos: [],        // { url, enabled }
   torrentlio: { enabled: false, mode: 'mux', maxDubs: 8, base: 'https://torrentio.strem.fun', providers: ['yts', 'eztv', '1337x', 'thepiratebay', 'torrentgalaxy', 'nyaasi'], sort: 'qualitysize', qualityfilter: ['scr', 'cam', '480p'], limit: 3, language: '', maxStreams: 24 },
 };
-const log = (...a) => { try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + a.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join(' ') + '\n'); } catch {} };
+let logWrites = 0;
+const appendLogCapped = (file, line) => {
+  fs.promises.appendFile(file, line).then(() => {
+    if (++logWrites % 64 !== 0) return;
+    return fs.promises.stat(file).then((st) => { if (st.size > 2 * 1024 * 1024) return fs.promises.rename(file, file + '.old').catch(() => fs.promises.truncate(file, 0).catch(() => {})); }).catch(() => {});
+  }).catch(() => {});
+};
+const log = (...a) => appendLogCapped(LOG, new Date().toISOString() + ' ' + a.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join(' ') + '\n');
 
 export function loadSettings() {
   let s = {};
@@ -319,7 +326,7 @@ async function tmdbToImdb(tmdbId, mediaType) {
     const r = await fetch('https://api.themoviedb.org/3/' + kind + '/' + encodeURIComponent(raw) + '/external_ids?api_key=' + TMDB, { signal: AbortSignal.timeout(10000) });
     const j = await r.json();
     const imdb = j && j.imdb_id ? String(j.imdb_id) : '';
-    if (imdb) tmdbImdbCache.set(ck, imdb);
+    if (imdb) { tmdbImdbCache.set(ck, imdb); capMap(tmdbImdbCache, 500); }
     return imdb;
   } catch { return ''; }
 }
@@ -405,6 +412,7 @@ function getProvSession(type, id, st) {
   provSessions.set(sk, sess);
   if (provSessions.size > 40) {
     for (const [k, v] of provSessions) { if (Date.now() - v.created > TTL) provSessions.delete(k); }
+    capMap(provSessions, 40);
   }
   return sess;
 }
@@ -609,7 +617,7 @@ export function createServer() {
   const srv = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     const p = url.pathname;
-    if (/^\/(tl|mx)\//.test(p)) { try { fs.appendFileSync(path.join(HERE, 'req.log'), new Date().toISOString() + ' ' + req.method + ' ' + p.slice(-60) + ' range=' + (req.headers.range || '-') + ' ua=' + String(req.headers['user-agent'] || '').slice(0, 40) + '\n'); } catch {} }
+    if (/^\/(tl|mx)\//.test(p)) { appendLogCapped(path.join(HERE, 'req.log'), new Date().toISOString() + ' ' + req.method + ' ' + p.slice(-60) + ' range=' + (req.headers.range || '-') + ' ua=' + String(req.headers['user-agent'] || '').slice(0, 40) + '\n'); }
     const send = (code, body, h = JSON_H) => { res.writeHead(code, h); res.end(typeof body === 'string' ? body : JSON.stringify(body)); };
     const html = (code, body) => send(code, body, { 'content-type': 'text/html; charset=utf-8' });
     try {

@@ -17,7 +17,7 @@ function req(url, { referer = MAIN + "/", method, form, headers = {} } = {}) {
 		if (method) args.push("-X", method);
 	}
 	args.push(url);
-	return new Promise((resolve, reject) => execFile("curl.exe", args, { cwd: HERE, maxBuffer: 24 * 1024 * 1024, encoding: "utf8" }, (err, stdout) => {
+	return new Promise((resolve, reject) => execFile(process.platform === "win32" ? "curl.exe" : "curl", args, { cwd: HERE, maxBuffer: 24 * 1024 * 1024, encoding: "utf8", windowsHide: true }, (err, stdout) => {
 		if (err && !stdout?.length) return reject(err);
 		const s = stdout || "";
 		const m = s.match(/\n__META__(\d+)__([^\r\n]*)$/);

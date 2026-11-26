@@ -45,7 +45,7 @@ function txSpawn(job) {
 	if (job.p) return;
 	job.exited = false;
 	job.code = null;
-	const args = ["-hide_banner", "-loglevel", "error", "-allowed_extensions", "ALL", "-extension_picky", "0", "-i", job.u, "-map", "0:v:0", "-map", "0:a:0?", ...(job.copy ? ["-c:v", "copy", "-c:a", "copy"] : ["-vf", "scale=-2:'min(1080,ih)'", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-force_key_frames", "expr:gte(t,n_forced*" + SEG + ")", "-c:a", "aac", "-b:a", "160k"]), "-f", "hls", "-hls_time", String(SEG), "-hls_list_size", "0", "-start_number", "0", "-hls_flags", "independent_segments", "-hls_segment_filename", pathMod.join(job.dir, "s%05d.ts"), pathMod.join(job.dir, "idx_0.m3u8")];
+	const args = ["-hide_banner", "-loglevel", "error", "-rw_timeout", "20000000", "-allowed_extensions", "ALL", "-extension_picky", "0", "-i", job.u, "-map", "0:v:0", "-map", "0:a:0?", ...(job.copy ? ["-c:v", "copy", "-c:a", "copy"] : ["-vf", "scale=-2:'min(1080,ih)'", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-force_key_frames", "expr:gte(t,n_forced*" + SEG + ")", "-c:a", "aac", "-b:a", "160k"]), "-f", "hls", "-hls_time", String(SEG), "-hls_list_size", "0", "-start_number", "0", "-hls_flags", "independent_segments", "-hls_segment_filename", pathMod.join(job.dir, "s%05d.ts"), pathMod.join(job.dir, "idx_0.m3u8")];
 	const p = spawn(FFMPEG, args, { windowsHide: true });
 	p.on("error", (e) => { log("ffmpeg spawn error", e.message); if (job.p === p) { job.exited = true; job.code = -1; job.error = e.message; job.finishedAt = Date.now(); } });
 	p.stderr.on("data", (x) => log("ffmpeg", String(x).slice(0, 160)));
@@ -82,6 +82,9 @@ function cleanupTxJobs() {
 }
 const txCleanupTimer = setInterval(cleanupTxJobs, 60_000);
 txCleanupTimer.unref();
+function shutdownTxJobs() { for (const job of [...txJobs.values()]) dropTxJob(job); }
+process.once("SIGTERM", () => { shutdownTxJobs(); process.exit(0); });
+process.once("SIGINT", () => { shutdownTxJobs(); process.exit(0); });
 const segName = (job, i) => pathMod.join(job.dir, "s" + String(i).padStart(5, "0") + ".ts");
 function readTxPlaylist(job) {
 	try {
@@ -148,7 +151,7 @@ function capMap(m, max) { while (m.size > max) m.delete(m.keys().next().value); 
 const cache = new Map();
 
 async function j(url, opts) {
-	const r = await fetch(url, opts);
+	const r = await fetch(url, opts && opts.signal ? opts : { ...(opts || {}), signal: AbortSignal.timeout(15000) });
 	if (!r.ok) throw new Error(url + " -> " + r.status);
 	return r.json();
 }
@@ -188,13 +191,31 @@ function pick(results, titles, year) {
 }
 
 const PROXY_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const CURL_MAX_BYTES = Math.max(8, Math.min(128, Number(process.env.CURL_MAX_MB || 48) || 48)) * 1024 * 1024;
+function isSafeProxyTarget(raw) {
+	let u; try { u = new URL(String(raw || "")); } catch { return false; }
+	if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+	const host = String(u.hostname || "").replace(/^\[|\]$/g, "").toLowerCase();
+	if (!host || host === "localhost" || host.endsWith(".localhost") || host === "metadata.google.internal" || host === "metadata") return false;
+	const isPriv4 = (ip) => { const p = ip.split(".").map(Number); return p.length !== 4 || p[0] === 0 || p[0] === 10 || p[0] === 127 || (p[0] === 169 && p[1] === 254) || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168); };
+	const ver = netCP.isIP(host);
+	if (ver === 4) return !isPriv4(host);
+	if (ver === 6) {
+		if (host === "::" || host === "::1" || /^(fe[89ab]|fc|fd)/i.test(host)) return false;
+		const m4 = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(host);
+		if (m4) return !isPriv4(m4[1]);
+		const m4h = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(host);
+		if (m4h) { const hi = parseInt(m4h[1], 16), lo = parseInt(m4h[2], 16); return !isPriv4([(hi >> 8) & 255, hi & 255, (lo >> 8) & 255, lo & 255].join(".")); }
+	}
+	return true;
+}
 function curlBuf(url, referer, origin) {
 	const args = ["-s", "-L", "-m", "40", "--compressed", "-A", PROXY_UA, "-w", "\n__STATUS__%{http_code}__CT__%{content_type}"];
 	if (referer) args.push("-e", referer);
 	if (origin) args.push("-H", "Origin: " + origin);
 	args.push(url);
 	return new Promise((resolve, reject) => {
-		execFile(process.platform === "win32" ? "curl.exe" : "curl", args, { maxBuffer: 128 * 1024 * 1024, encoding: "buffer" }, (e, out) => {
+		execFile(process.platform === "win32" ? "curl.exe" : "curl", args, { maxBuffer: CURL_MAX_BYTES, encoding: "buffer", windowsHide: true }, (e, out) => {
 			if (e) return reject(new Error("curl transport failed: " + (e.code || e.message)));
 			if (!out || !out.length) return reject(new Error("curl returned an empty response"));
 			const idx = out.lastIndexOf("\n__STATUS__");
@@ -352,7 +373,7 @@ function rememberSegs(pl) { const q = []; for (const l of pl.split(/\r?\n/)) { c
 const EGRESS_PORT = Number(process.env.EGRESS_PORT || 7301);
 const CLIENT_PX = Object.fromEntries(["127.0.0.1", ...String(process.env.CLIENT_PX_IPS || "").split(",").map((s) => s.trim()).filter(Boolean)].map((ip) => [ip, 1]));
 const cpState = new Map();
-function clientUp(ip) { const x = cpState.get(ip); if (x && Date.now() - x.t < 20000) return Promise.resolve(x.ok); return new Promise((ok) => { const so = netCP.connect(EGRESS_PORT, ip); const done = (v) => { so.destroy(); cpState.set(ip, { ok: v, t: Date.now() }); ok(v); }; so.setTimeout(800, () => done(false)); so.once("connect", () => done(true)); so.once("error", () => done(false)); }); }
+function clientUp(ip) { const x = cpState.get(ip); if (x && Date.now() - x.t < 20000) return Promise.resolve(x.ok); return new Promise((ok) => { const so = netCP.connect(EGRESS_PORT, ip); const done = (v) => { so.destroy(); cpState.set(ip, { ok: v, t: Date.now() }); capMap(cpState, 64); ok(v); }; so.setTimeout(800, () => done(false)); so.once("connect", () => done(true)); so.once("error", () => done(false)); }); }
 
 const inflight = new Map();
 async function streamsFor(type, id) {
@@ -361,11 +382,12 @@ async function streamsFor(type, id) {
 	let st = inflight.get(id);
 	if (!st) {
 		st = { psink: [], base: [], extra: [], bsink: [] };
+		inflight.set(id, st);
 		const bbj = (async () => { const m = await meta(type, id.split(':')[0]); const titles = [...new Set([m.tr, m.name].filter(Boolean))]; const [, se, ep] = id.split(':'); await bb.get({ type, titles, year: m.year, season: +se || 1, episode: +ep || 1, out: st.bsink, pxUrl, log }); })().catch((e) => log('bigbull error', e.message));
 		const bj = baseStreams(type, id).then((r) => { st.base = r; }).catch(() => {});
 		const pj = pluginStreams(type, id, st.psink, log).catch((e) => log("plugins", e.message));
 		const ej = (async () => { const m = await meta(type, id.split(':')[0]); const titles = [...new Set([m.tr, m.name].filter(Boolean))]; if (type === 'movie') { const rs = await withTimeout(jet.get({ type: 'movie', titles, year: m.year, season: 0, episode: 0 }), 40000, 'jet'); for (const x of rs) st.extra.push({ name: 'Feroxx · JetFilmizle', title: m.name + '\n' + (x.label || 'JetFilmizle'), url: (x.referer ? pxUrl(x.url, x.referer, x.origin) : x.url) + (/\.m3u8/i.test(x.url) ? '' : '#.m3u8'), subtitles: (x.subs || []).map((s, i) => ({ id: 'jt' + i, url: s.url, lang: s.lang })) }); } else { const [, se, ep] = id.split(':'); const rs = await withTimeout(cm.get({ type: 'series', titles, season: +se, episode: +ep, strict: true }), 40000, 'cm'); for (const x of rs) st.extra.push({ name: 'Feroxx · ÇizgiMax Dublaj', title: m.name + ' S' + se + 'E' + ep + '\nTürkçe dublaj (' + (x.label || 'ÇizgiMax') + ')', url: pxUrl(x.url, x.referer, x.origin) + (/\.m3u8/i.test(x.url) ? '' : '#.m3u8') }); } })().catch((e) => log('jet/cm error', e.message));
-		st.all = Promise.all([bj, pj, ej, bbj]).then(async () => { const v = await rankStreams(merge([...st.base, ...st.extra, ...st.bsink], st.psink)); if (v.length) mcache.set(id, { t: Date.now(), v }); log("merged final:", v.length); }).finally(() => inflight.delete(id));
+		st.all = Promise.all([bj, pj, ej, bbj]).then(async () => { const v = await rankStreams(merge([...st.base, ...st.extra, ...st.bsink], st.psink)); if (v.length) { mcache.set(id, { t: Date.now(), v }); capMap(mcache, 100); } log("merged final:", v.length); }).finally(() => inflight.delete(id));
 	}
 	const t0 = Date.now();
 	await Promise.race([st.all, new Promise((r) => { const iv = setInterval(() => { const n = merge([...st.base, ...st.extra, ...st.bsink], st.psink).length; const el = Date.now() - t0; if ((n >= 4 && el >= 4000) || el >= 9000) { clearInterval(iv); r(); } }, 300); st.all.finally(() => { clearInterval(iv); r(); }); })]);
@@ -376,9 +398,10 @@ async function streamsFor(type, id) {
 const server = http.createServer(async (req, res) => {
 	const h = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "content-type": "application/json; charset=utf-8" };
 	if (req.method === "OPTIONS") { res.writeHead(204, h); return res.end(); }
-	const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
-	log("REQ", req.method, path.startsWith("/px") ? "/px " + (new URL(req.url, "http://x").searchParams.get("u") || "").slice(0, 70) : path, (req.headers["user-agent"] || "").slice(0, 50), req.headers.range || "");
 	try {
+		let path;
+		try { path = decodeURIComponent(new URL(req.url, "http://x").pathname); } catch { res.writeHead(400, h); return res.end(JSON.stringify({ error: "bad url" })); }
+		log("REQ", req.method, path.startsWith("/px") ? "/px " + (new URL(req.url, "http://x").searchParams.get("u") || "").slice(0, 70) : path, (req.headers["user-agent"] || "").slice(0, 50), req.headers.range || "");
 		if (await nativeRepoResponse(path, req, res)) return;
 		if (path === "/tx/start") {
 			const u = new URL(req.url, "http://x").searchParams.get("u");
@@ -393,8 +416,11 @@ const server = http.createServer(async (req, res) => {
 				if (!direct || (direct.origin !== ORIGIN && direct.origin !== "http://127.0.0.1:" + PORT) || !(proxyPath === "px" || proxyPath.startsWith("px/"))) { res.writeHead(400, h); return res.end(JSON.stringify({ error: "copy mode requires a local proxied HLS URL" })); }
 				res.writeHead(302, { location: u, "access-control-allow-origin": "*", "cache-control": "no-store" }); return res.end();
 			}
-			const parsedInput = new URL(u);
-			const localProxy = (parsedInput.origin === ORIGIN || parsedInput.origin === 'http://127.0.0.1:' + PORT) && (parsedInput.pathname === '/px' || parsedInput.pathname.startsWith('/px/'));
+			let parsedInput;
+			try { parsedInput = new URL(u); } catch { res.writeHead(400, h); return res.end(JSON.stringify({ error: "invalid url" })); }
+			const txProxyPath = parsedInput.pathname.replace(/^\//, "").replace(/^[0-9a-f]{16,}\//, "");
+			const localProxy = (parsedInput.origin === ORIGIN || parsedInput.origin === 'http://127.0.0.1:' + PORT) && (txProxyPath === 'px' || txProxyPath.startsWith('px/'));
+			if (!localProxy && !isSafeProxyTarget(u)) { res.writeHead(403, h); return res.end(JSON.stringify({ error: "forbidden target" })); }
 			if (localProxy && await canPlayDirect(u, FFMPEG.replace(/ffmpeg(\.exe)?$/i, 'ffprobe$1'))) {
 				log('direct compatible VOD; transcoding bypassed');
 				res.writeHead(302, {location:u, 'access-control-allow-origin':'*', 'cache-control':'no-store'}); return res.end();
@@ -435,6 +461,7 @@ const server = http.createServer(async (req, res) => {
 			const q = new URL(req.url, "http://x").searchParams;
 			const target = q.get("u");
 			if (!target || !/^https?:\/\//.test(target)) { res.writeHead(400, h); return res.end("{}"); }
+			if (!isSafeProxyTarget(target)) { res.writeHead(403, h); return res.end(JSON.stringify({ error: "forbidden target" })); }
 			const load = async () => {
 				try { return await curlBuf(target, q.get('r') || '', q.get('o') || ''); }
 				catch (first) {

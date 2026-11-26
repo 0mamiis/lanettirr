@@ -157,6 +157,49 @@ for rel in .env mega-bridge/saved-config.json mega-bridge/blacklist.json saved-c
   fi
 done
 
+for sf in guncelle.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
+  if [ -f "$ROOT/$sf" ]; then
+    sed -i 's/\r$//' "$ROOT/$sf" 2>/dev/null || true
+    chmod +x "$ROOT/$sf"
+    if command -v termux-fix-shebang >/dev/null 2>&1; then termux-fix-shebang "$ROOT/$sf" >/dev/null 2>&1 || true; fi
+  fi
+done
+for sf in "$ROOT/cs-host/tools/dex-tools-v2.4/"*.sh; do
+  if [ -f "$sf" ]; then
+    sed -i 's/\r$//' "$sf" 2>/dev/null || true
+    chmod +x "$sf"
+    if command -v termux-fix-shebang >/dev/null 2>&1; then termux-fix-shebang "$sf" >/dev/null 2>&1 || true; fi
+  fi
+done
+if [ -n "${PREFIX:-}" ] && printf '%s' "$PREFIX" | grep -q "com.termux" && [ -d "$HOME/.shortcuts" ]; then
+  if [ -f "$HOME/.shortcuts/Lanettirr-Config" ] || [ -f "$HOME/.shortcuts/Lanettirr-Start" ]; then
+    cat > "$HOME/.shortcuts/Lanettirr-Config" <<EOF
+#!/usr/bin/env bash
+INSTALL_DIR="$ROOT"
+EOF
+    cat >> "$HOME/.shortcuts/Lanettirr-Config" <<'EOF'
+PORT_VAL=""
+if [ -f "$INSTALL_DIR/.env" ]; then
+  PORT_VAL="$(grep -E '^[[:space:]]*MEGA_PORT[[:space:]]*=' "$INSTALL_DIR/.env" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed 's/#.*//' | tr -d "\"'\r\t " || true)"
+  if [ -z "$PORT_VAL" ]; then
+    PORT_VAL="$(grep -E '^[[:space:]]*PORT[[:space:]]*=' "$INSTALL_DIR/.env" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed 's/#.*//' | tr -d "\"'\r\t " || true)"
+  fi
+fi
+case "$PORT_VAL" in ''|*[!0-9]*) PORT_VAL="" ;; esac
+URL="http://127.0.0.1:${PORT_VAL:-${MEGA_PORT:-${PORT:-17410}}}/configure"
+if command -v termux-open-url >/dev/null 2>&1; then
+  termux-open-url "$URL"
+elif command -v am >/dev/null 2>&1; then
+  am start -a android.intent.action.VIEW -d "$URL" >/dev/null 2>&1 || true
+else
+  echo "Open in browser: $URL"
+fi
+EOF
+    chmod +x "$HOME/.shortcuts/Lanettirr-"* 2>/dev/null || true
+    if command -v termux-fix-shebang >/dev/null 2>&1; then termux-fix-shebang "$HOME/.shortcuts/Lanettirr-"* >/dev/null 2>&1 || true; fi
+  fi
+fi
+
 write_status true "install" 75 "Checking dependencies..." false ""
 if [ "$SKIP_NPM" -eq 0 ] && command -v npm >/dev/null 2>&1; then
   if [ -f "$ROOT/trhub/package.json" ]; then
@@ -188,12 +231,24 @@ if [ "$NO_RESTART" -eq 0 ]; then
     "$HOME/.shortcuts/lanettirr-stop" >/dev/null 2>&1 || true
     sleep 1
     "$HOME/.shortcuts/lanettirr-start" >/dev/null 2>&1 || true
+  elif [ -x "$HOME/.shortcuts/Lanettirr-Stop" ] && [ -x "$HOME/.shortcuts/Lanettirr-Start" ]; then
+    "$HOME/.shortcuts/Lanettirr-Stop" >/dev/null 2>&1 || true
+    sleep 1
+    "$HOME/.shortcuts/Lanettirr-Start" >/dev/null 2>&1 || true
   else
     pkill -f "mega-bridge/index.js" >/dev/null 2>&1 || pkill -f "$MB_DIR/index.js" >/dev/null 2>&1 || true
     sleep 1
     nohup node "$MB_DIR/index.js" >"$RUNTIME_DIR/mega-bridge.out.log" 2>"$RUNTIME_DIR/mega-bridge.err.log" &
   fi
-  MEGA_PORT="${MEGA_PORT:-${PORT:-17410}}"
+  ENV_PORT=""
+  if [ -f "$ROOT/.env" ]; then
+    ENV_PORT="$(grep -E '^[[:space:]]*MEGA_PORT[[:space:]]*=' "$ROOT/.env" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed 's/#.*//' | tr -d "\"'\r\t " || true)"
+    if [ -z "$ENV_PORT" ]; then
+      ENV_PORT="$(grep -E '^[[:space:]]*PORT[[:space:]]*=' "$ROOT/.env" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed 's/#.*//' | tr -d "\"'\r\t " || true)"
+    fi
+    case "$ENV_PORT" in ''|*[!0-9]*) ENV_PORT="" ;; esac
+  fi
+  MEGA_PORT="${ENV_PORT:-${MEGA_PORT:-${PORT:-17410}}}"
   for _ in $(seq 1 25); do
     if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 2 "http://127.0.0.1:${MEGA_PORT}/health" >/dev/null 2>&1; then
       break

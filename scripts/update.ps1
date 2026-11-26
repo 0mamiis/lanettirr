@@ -135,14 +135,20 @@ function Install-NpmDir {
 
 function Resolve-MegaPort {
     $envFile = Join-Path $Root ".env"
+    $fallback = 0
     if (Test-Path -LiteralPath $envFile) {
         foreach ($rawLine in (Get-Content -LiteralPath $envFile -Encoding UTF8 -ErrorAction SilentlyContinue)) {
             $line = $rawLine.Trim()
-            if ($line -match '^(?:MEGA_PORT|PORT)\s*=\s*(\d+)') {
+            if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith("#")) { continue }
+            if ($line -match '^MEGA_PORT\s*=\s*["'']?(\d+)["'']?(?:\s*(?:#.*)?$)') {
                 return [int]$Matches[1]
+            }
+            if ($line -match '^PORT\s*=\s*["'']?(\d+)["'']?(?:\s*(?:#.*)?$)') {
+                $fallback = [int]$Matches[1]
             }
         }
     }
+    if ($fallback -gt 0) { return $fallback }
     return 17410
 }
 
@@ -249,9 +255,19 @@ try {
     }
 
     Write-UpdateStatus -Running $true -Stage "install" -Percent 75 -Message "Checking dependencies..."
+    $stoppedForUpdate = $false
     if (-not $SkipNpm) {
         $trChanged = (-not (Test-Path -LiteralPath (Join-Path $Root "trhub\node_modules"))) -or ($trPkgBefore -ne (Get-FileSha256Safe (Join-Path $Root "trhub\package.json"))) -or ($trLockBefore -ne (Get-FileSha256Safe (Join-Path $Root "trhub\package-lock.json")))
         $mbChanged = (-not (Test-Path -LiteralPath (Join-Path $Root "mega-bridge\node_modules"))) -or ($mbPkgBefore -ne (Get-FileSha256Safe (Join-Path $Root "mega-bridge\package.json"))) -or ($mbLockBefore -ne (Get-FileSha256Safe (Join-Path $Root "mega-bridge\package-lock.json")))
+        if ((-not $NoRestart) -and ($trChanged -or $mbChanged)) {
+            $stopPre = Join-Path $Root "scripts\stop-all.ps1"
+            if (Test-Path -LiteralPath $stopPre) {
+                if ($FromUi) { Start-Sleep -Milliseconds 500 }
+                try { & $stopPre | Out-Null } catch {}
+                Start-Sleep -Milliseconds 800
+                $stoppedForUpdate = $true
+            }
+        }
         if ($trChanged -and (Test-Path -LiteralPath (Join-Path $Root "trhub\package.json"))) {
             Say "[4/5] trhub paketleri guncelleniyor..." "Cyan"
             Install-NpmDir -DirPath (Join-Path $Root "trhub") -Label "trhub"
@@ -268,10 +284,10 @@ try {
     if (-not $NoRestart) {
         Say "[5/5] Servisler yeniden baslatiliyor..." "Cyan"
         Write-UpdateStatus -Running $true -Stage "restart" -Percent 90 -Message "Restarting services..."
-        if ($FromUi) { Start-Sleep -Milliseconds 500 }
         $stopScript = Join-Path $Root "scripts\stop-all.ps1"
         $startScript = Join-Path $Root "scripts\start-all.ps1"
-        if (Test-Path -LiteralPath $stopScript) {
+        if ((-not $stoppedForUpdate) -and (Test-Path -LiteralPath $stopScript)) {
+            if ($FromUi) { Start-Sleep -Milliseconds 500 }
             try { & $stopScript | Out-Null } catch {}
             Start-Sleep -Milliseconds 800
         }

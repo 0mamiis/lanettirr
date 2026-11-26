@@ -16,9 +16,10 @@ function init() {
 const tmdbCache = new Map();
 async function toTmdb(imdb, type) {
 	if (tmdbCache.has(imdb)) return tmdbCache.get(imdb);
-	const d = await fetch("https://api.themoviedb.org/3/find/" + imdb + "?external_source=imdb_id&api_key=" + TMDB).then((r) => r.json());
+	const d = await fetch("https://api.themoviedb.org/3/find/" + imdb + "?external_source=imdb_id&api_key=" + TMDB, { signal: AbortSignal.timeout(10000) }).then((r) => r.json());
 	const id = (type === "movie" ? d.movie_results : d.tv_results)?.[0]?.id;
 	tmdbCache.set(imdb, id || null);
+	while (tmdbCache.size > 300) tmdbCache.delete(tmdbCache.keys().next().value);
 	return id || null;
 }
 const lang = (r) => { const t = [r.title, r.name, r.quality, r.language].join(' ').toLowerCase(); return /dublaj|türkçe|turkce|turkish dub/.test(t) ? 'Dublaj' : /altyaz|sub/.test(t) ? 'Altyazı' : /orijinal|original/.test(t) ? 'Orijinal' : ''; };

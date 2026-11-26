@@ -173,13 +173,26 @@ function Start-ServiceProc {
         [string[]]$ArgumentList,
         [string]$WorkingDirectory
     )
+    $outLog = Join-Path $LogDir ($Name + '.out.log')
+    $errLog = Join-Path $LogDir ($Name + '.err.log')
+
     if (($Port -gt 0) -and (Test-TcpPort -HostName '127.0.0.1' -Port $Port)) {
+        $prevEntry = $tracked | Where-Object { $_.name -eq $Name } | Select-Object -First 1
+        $prevPid = 0
+        if ($prevEntry -and $prevEntry.pid) { $prevPid = [int]$prevEntry.pid }
+        $watchSpecs.Add([ordered]@{
+            name = $Name
+            port = $Port
+            pid = $prevPid
+            filePath = $FilePath
+            args = $ArgumentList
+            workDir = $WorkingDirectory
+            outLog = $outLog
+            errLog = $errLog
+        })
         Write-Host ('[ATLA] ' + $Name + ' zaten dinliyor (port ' + $Port + ')') -ForegroundColor DarkYellow
         return $null
     }
-
-    $outLog = Join-Path $LogDir ($Name + '.out.log')
-    $errLog = Join-Path $LogDir ($Name + '.err.log')
 
     $p = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
     $watchSpecs.Add([ordered]@{
@@ -193,6 +206,9 @@ function Start-ServiceProc {
         errLog = $errLog
     })
 
+    for ($i = $tracked.Count - 1; $i -ge 0; $i--) {
+        if ($tracked[$i].name -eq $Name) { $tracked.RemoveAt($i) }
+    }
     $entry = [PSCustomObject]@{
         name = $Name
         port = $Port
@@ -271,7 +287,7 @@ if ((-not $NoLoops) -and ($watchSpecs.Count -gt 0)) {
         $tracked.Remove($existingWd) | Out-Null
     }
     $specFile = Join-Path $RuntimeDir 'watchdog-specs.json'
-    ($watchSpecs | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $specFile -Encoding UTF8
+    (ConvertTo-Json -InputObject @($watchSpecs) -Depth 4) | Set-Content -LiteralPath $specFile -Encoding UTF8
     $wdScript = Join-Path $RuntimeDir 'watchdog-all.ps1'
     $wdBody = @'
 param([string]$SpecFile, [string]$PidFile)
@@ -298,14 +314,21 @@ while ($true) {
         }
     }
     if ($changed) {
-        try { ($specs | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $SpecFile -Encoding UTF8 } catch {}
+        try { (ConvertTo-Json -InputObject @($specs) -Depth 4) | Set-Content -LiteralPath $SpecFile -Encoding UTF8 } catch {}
         try {
             if (Test-Path -LiteralPath $PidFile) {
                 $pf = Get-Content -LiteralPath $PidFile -Raw | ConvertFrom-Json
+                $plist = New-Object System.Collections.Generic.List[object]
+                if ($pf.processes) { foreach ($pitem in @($pf.processes)) { $plist.Add($pitem) } }
                 foreach ($s in $specs) {
-                    $m = $pf.processes | Where-Object { $_.name -eq $s.name } | Select-Object -First 1
-                    if ($m) { $m.pid = [int]$s.pid }
+                    $m = $plist | Where-Object { $_.name -eq $s.name } | Select-Object -First 1
+                    if ($m) {
+                        $m.pid = [int]$s.pid
+                    } elseif ($s.pid) {
+                        $plist.Add([PSCustomObject]@{ name = [string]$s.name; port = [int]$s.port; pid = [int]$s.pid; startedAt = (Get-Date).ToString("o") })
+                    }
                 }
+                $pf.processes = @($plist)
                 $pf.updatedAt = (Get-Date).ToString("o")
                 ($pf | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $PidFile -Encoding UTF8
             }

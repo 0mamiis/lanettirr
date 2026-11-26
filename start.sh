@@ -98,30 +98,44 @@ start_svc() {
     echo "[SKIP] $name already listening on port $port"
     return 0
   fi
+  if [ -f "$PID_FILE" ]; then
+    grep -v "^$name " "$PID_FILE" > "$PID_FILE.tmp" 2>/dev/null || true
+    mv -f "$PID_FILE.tmp" "$PID_FILE"
+  fi
   (cd "$workdir" && nohup "$@" >"$LOG_DIR/$name.out.log" 2>"$LOG_DIR/$name.err.log" </dev/null & echo "$name $!" >> "$PID_FILE")
   echo "[START] $name (port $port)"
 }
 
-: > "$PID_FILE"
+if [ -f "$PID_FILE" ]; then
+  : > "$PID_FILE.keep"
+  while read -r pname ppid; do
+    if [ -n "${ppid:-}" ] && kill -0 "$ppid" >/dev/null 2>&1; then
+      printf '%s %s\n' "$pname" "$ppid" >> "$PID_FILE.keep"
+    fi
+  done < "$PID_FILE"
+  mv -f "$PID_FILE.keep" "$PID_FILE"
+else
+  : > "$PID_FILE"
+fi
 echo "=== Starting Lanettirr ==="
 
-if [ -f "$ROOT/cs-host/lib/cs-app.jar" ] && [ -x "$ROOT/cs-host/run-host.sh" ] && command -v java >/dev/null 2>&1; then
+if [ "${SKIP_CS_HOST:-0}" != "1" ] && [ -f "$ROOT/cs-host/lib/cs-app.jar" ] && [ -x "$ROOT/cs-host/run-host.sh" ] && command -v java >/dev/null 2>&1; then
   start_svc "cs-host" "$BB_PORT" "$ROOT/cs-host" bash "$ROOT/cs-host/run-host.sh"
   wait_http "http://127.0.0.1:$BB_PORT/health" 20 || true
 else
   echo "[INFO] cs-host skipped (Java or cs-host-deps not installed)"
 fi
 
-start_svc "egress" "$EGRESS_PORT" "$ROOT/egress" node egress.mjs
+start_svc "egress" "$EGRESS_PORT" "$ROOT/egress" node "$ROOT/egress/egress.mjs"
 wait_port "$EGRESS_PORT" 8 || true
 
-start_svc "kraptor-bridge" "$BRIDGE_PORT" "$ROOT/kraptor-bridge" node server.mjs
+start_svc "kraptor-bridge" "$BRIDGE_PORT" "$ROOT/kraptor-bridge" node "$ROOT/kraptor-bridge/server.mjs"
 wait_port "$BRIDGE_PORT" 12 || true
 
-start_svc "trhub" "$HUB_PORT" "$ROOT/trhub" node hub.mjs
+start_svc "trhub" "$HUB_PORT" "$ROOT/trhub" node "$ROOT/trhub/hub.mjs"
 wait_http "http://127.0.0.1:$HUB_PORT/en-repo/manifest.json" 20 || true
 
-start_svc "mega-bridge" "$PORT" "$ROOT/mega-bridge" node index.js
+start_svc "mega-bridge" "$PORT" "$ROOT/mega-bridge" node "$ROOT/mega-bridge/index.js"
 if wait_http "http://127.0.0.1:$PORT/health" 20; then
   echo ""
   echo "=== Lanettirr Ready ==="

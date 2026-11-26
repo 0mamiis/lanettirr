@@ -11,7 +11,7 @@ function req(url, { form, referer, headers = {} } = {}) {
 	if (form) for (const [k, v] of Object.entries(form)) args.push("--data-urlencode", k + "=" + v);
 	args.push(url);
 	return new Promise((resolve, reject) => {
-		execFile("curl.exe", args, { maxBuffer: 20 * 1024 * 1024, encoding: "buffer" }, (err, stdout) => {
+		execFile(process.platform === "win32" ? "curl.exe" : "curl", args, { maxBuffer: 20 * 1024 * 1024, encoding: "buffer", windowsHide: true }, (err, stdout) => {
 			if (err && !stdout?.length) return reject(err);
 			const s = stdout.toString("utf8");
 			const m = s.match(/\n__STATUS__(\d+)__URL__([\s\S]*)$/);
