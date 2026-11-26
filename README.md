@@ -1,101 +1,103 @@
 # lanettirr
 
-Windows için yerel **Lanettirr (Mega Bridge)** + **TR Hub** + **EN Hub** paketi — tek kurulumla Nuvio Desktop ve Stremio/AIOStreams üzerinde 48 dilde yüzlerce torrentsiz VOD kaynağını gerçek video doğrulaması, otomatik failover ve özel rozetlerle izlemenizi sağlar.
+Self-hosted **Lanettirr (Mega Bridge)** + **TR Hub** + **EN Hub** package — brings hundreds of torrent-free VOD sources across 48 languages to **Nuvio** and **Stremio / AIOStreams** with real `ffprobe` stream verification, automatic failover, and custom badges.
 
-Depo: https://github.com/0mamiis/lanettirr
+Repository: https://github.com/0mamiis/lanettirr
 
-## Neler Sunar?
+## Features
 
-- **Tek Merkezden Çok Dilli Hub (48 Dil)**:
-  - **TR Hub**: 193+ Türkçe kaynak (CS3 + Nuvio TR depoları), gerçek dublaj/altyazı ayrımıyla.
-  - **EN Hub**: 10 EN deposundan tekilleştirilmiş 154+ yabancı kaynak (torrent sağlayıcıları hariç).
-  - **Diğer 46 Dil**: 87 Nuvio JS + 38 CS3 deposu, tamamı torrent ve canlı TV hariç VOD odaklı.
-- **Web Ayar Paneli (`/configure`)**:
-  - Dil seçimi ve sürükle-bırak öncelik sıralaması.
-  - Dil içi depo ve sağlayıcı bazlı aç/kapa kontrolü.
-  - Çözünürlük filtreleri (`4K / 2K / 1080p / 720p / 480p`), kalite başına ve hub başına sonuç limiti.
-  - Özelleştirilebilir kaynak sıralaması (varsayılan: **Kalite → Bitrate → Hız → Dublaj**).
-  - Sıralı hub yükleme (`hseq`), sağlayıcı zaman aşımı, otomatik failover süresi ve kara liste (blacklist) yönetimi.
-- **Gerçek Video Doğrulaması (`ffprobe`) ve 2 Satırlı Temiz Kartlar**:
-  - Üst satırda gerçek ölçülmüş çözünürlük, bitrate (`Mbps`) ve yanıt süresi (`ms`).
-  - Alt satırda doğrulanmış dil/dublaj bilgisi ile konteyner, HDR, video/ses kodeği ve kanal etiketleri (`MKV/MP4`, `HDR10`, `Dolby Vision`, `HEVC/H.264/AV1`, `5.1`, `AAC`, `Dual/Multi Audio`, `Multi Sub`).
-- **Özel Fusion Rozet URL'si (`/badges.json`)**:
-  - 220 rozetlik `FR-Badges` paketinin **Kalite → Dil/Dublaj → Konteyner → HDR/Bit → Kodek/Ses** önceliğiyle sıralanmış yerel/tünel adresi.
-- **Otomatik Failover, Kara Liste ve İndirme Desteği**:
-  - `/play/` hattı açılmayan veya zaman aşımına uğrayan kaynakları otomatik kara listeye alıp sıradaki çalışan kaynağa geçer.
-  - `/p/` proxy'si SSRF korumalıdır; `HEAD`, `Range` (`206`) ve kesintisiz akış desteği sayesinde Nuvio içindeki indirme butonuyla uyumludur.
+- **Unified Multi-Language Hub (48 Languages)**:
+  - **TR Hub**: 193+ Turkish sources (CloudStream `.cs3` + Nuvio TR repositories) with verified dub/subtitle separation.
+  - **EN Hub**: 154+ deduplicated English sources from 10 EN repositories (torrent providers excluded).
+  - **46 Additional Languages**: 87 Nuvio JS + 38 CloudStream (CS3) repositories, strictly VOD-focused (no torrents or live TV).
+- **Web Configuration Panel (`/configure`)**:
+  - Auto-detected 48-language interface (including RTL support).
+  - Language selection with drag-and-drop priority ordering.
+  - Per-language repository and per-provider enable/disable toggles.
+  - Resolution filters (`4K / 2K / 1080p / 720p / 480p`), plus per-quality and per-hub result limits.
+  - Customizable stream sorting (default: **Quality → Bitrate → Speed → Dub**).
+  - Sequential hub loading (`hseq`), provider timeouts, automatic failover timer, and blacklist management.
+  - Built-in automatic update checker and one-click **Update** button with a live progress bar.
+- **Real Video Probing (`ffprobe`) & Clean 2-Line Cards**:
+  - Top line shows real measured resolution, bitrate (`Mbps`), and response time (`ms`).
+  - Bottom line displays verified language/dub metadata along with container, HDR, video/audio codec, and channel tags (`MKV/MP4`, `HDR10`, `Dolby Vision`, `HEVC/H.264/AV1`, `5.1`, `AAC`, `Dual/Multi Audio`, `Multi Sub`).
+- **Custom Fusion Badges URL (`/badges.json`)**:
+  - Local/tunnel endpoint serving the 220-badge `FR-Badges` pack ordered by **Quality → Language/Dub → Container → HDR/Bit Depth → Codec/Audio**.
+- **Automatic Failover, Blacklist & Download Support**:
+  - The `/play/` pipeline automatically blacklists broken or timed-out streams and falls back to the next working source.
+  - The `/p/` proxy includes SSRF protection as well as `HEAD`, `Range` (`206`), and continuous streaming support compatible with Nuvio's built-in download button.
 
-## 3 Adımda Kurulum
+## 3-Step Installation (Windows)
 
-1. **İndir ve çıkar**: [GitHub sayfasından](https://github.com/0mamiis/lanettirr) **Code → Download ZIP** ile arşivi indirip bir klasöre çıkarın. Windows SmartScreen uyarısı çıkarsa **Ek bilgi → Yine de çalıştır** seçeneğini kullanın.
-2. **Kurulumu çalıştır**: Klasördeki `kur.bat` dosyasına çift tıklayın. Node.js, Java 21, FFmpeg/`ffprobe`, gerekli npm paketleri ve `cs-host-deps.zip` otomatik olarak kurulur.
-3. **Servisleri başlat**: `baslat.bat` dosyasını çalıştırıp tüm servislerin `HAZIR` durumuna geçmesini bekleyin.
+1. **Download & extract**: On the [GitHub page](https://github.com/0mamiis/lanettirr), click **Code → Download ZIP** and extract the archive to a folder. If Windows SmartScreen warns you, select **More info → Run anyway**.
+2. **Run setup**: Double-click `kur.bat`. Node.js, Java 21, FFmpeg/`ffprobe`, required npm packages, and `cs-host-deps.zip` are installed automatically.
+3. **Start services**: Run `baslat.bat` and wait until all services report ready (`HAZIR`).
 
-## Nuvio Desktop Ayarları
+## Nuvio Desktop Setup
 
-### 1. Ayar Paneli (Önerilen Başlangıç)
+### 1. Configuration Panel (Recommended First Step)
 
-Tarayıcıdan açıp dillerinizi, depolarınızı, sıralama ve failover ayarlarınızı kaydedin:
+Open the web panel in your browser to configure and save your languages, repositories, sorting, and failover settings:
 
-- **Ayar Paneli**: `http://127.0.0.1:3001/configure`
+- **Configuration Panel**: `http://127.0.0.1:3001/configure`
 
-### 2. Pluginler (Lanettirr Çok Dilli Hub)
+### 2. Plugins (Lanettirr Multi-Language Hub)
 
-**Ayarlar → Medya → İçerik & Keşif → Pluginler** bölümüne aşağıdaki adresi ekleyin:
+Go to **Settings → Media → Content & Discovery → Plugins** and add the following URL:
 
-- **Lanettirr (Kayıtlı Ayarlarla)**: `http://127.0.0.1:3001/saved/nuvio-repo/manifest.json`
+- **Lanettirr (Using Saved Config)**: `http://127.0.0.1:3001/saved/nuvio-repo/manifest.json`
 
-Aynı ekranda **"Eklenti sağlayıcılarını depoya göre grupla"** ayarını açık konuma getirin.
+On the same screen, enable **"Group plugin providers by repository"**.
 
-*(İsteğe bağlı olarak doğrudan ham hub adresleri de kullanılabilir: `http://127.0.0.1:7100/nuvio-repo/manifest.json` ve `http://127.0.0.1:7100/en-repo/manifest.json`.)*
+*(Optional raw hub endpoints are also available directly: `http://127.0.0.1:7100/nuvio-repo/manifest.json` and `http://127.0.0.1:7100/en-repo/manifest.json`.)*
 
-### 3. Fusion Rozet URL'si (Önerilen)
+### 3. Fusion Badges URL (Recommended)
 
-Kartlardaki ikonların **Kalite → Dil/Dublaj → Konteyner → HDR → Kodek** sırasıyla düzgün görünmesi için **Görünüm → Düzen → Yayınlar → Fusion Rozet URL'si** alanına ekleyin:
+To display stream card icons in the proper **Quality → Language/Dub → Container → HDR → Codec** order, set **Appearance → Layout → Streams → Fusion Badges URL** to:
 
-- **Fusion Rozetleri**: `http://127.0.0.1:3001/badges.json`
+- **Fusion Badges**: `http://127.0.0.1:3001/badges.json`
 
-### 4. Stremio / AIOStreams (Opsiyonel)
+### 4. Stremio / AIOStreams & Compatible Apps (Optional)
 
-Stremio veya AIOStreams üzerinden kullanmak için:
+To use Lanettirr with Stremio, AIOStreams, or any Stremio-compatible client:
 
 - **Stremio Manifest**: `http://127.0.0.1:3001/saved/manifest.json`
 
-## Günlük Kullanım
+## Daily Usage
 
-- **Başlatmak için**: `baslat.bat`
-- **Durdurmak için**: `durdur.bat`
-- **Güncellemek için**: Web ayar panelindeki (`http://127.0.0.1:3001/configure`) üst çubuktan tek tıkla **Güncelle** butonuna basabilir veya klasördeki `guncelle.bat` (Windows) / `./guncelle.sh` (Linux/Termux) betiğini çalıştırabilirsiniz. Güncelleme sırasında ayarlarınız (`saved-config.json`, `blacklist.json`, `.env`) otomatik korunur.
-- **Sağlık kontrolü**: `http://127.0.0.1:3001/health`
-- **Otomatik başlatma (Windows Startup)**: Windows Başlangıç (`shell:startup`) klasörüne `scripts/start-hidden.vbs` için kısayol ekleyerek servislerin bilgisayar açıldığında pencere göstermeden arka planda başlamasını sağlayabilirsiniz.
+- **Start**: `baslat.bat`
+- **Stop**: `durdur.bat`
+- **Update**: Click the one-click **Update** button in the top bar of the web configuration panel (`http://127.0.0.1:3001/configure`), or run `guncelle.bat` (Windows) / `./guncelle.sh` (Linux/Termux). Your user data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates.
+- **Health check**: `http://127.0.0.1:3001/health`
+- **Auto-start on Windows boot**: Create a shortcut to `scripts/start-hidden.vbs` inside your Windows Startup folder (`shell:startup`) to launch the services silently in the background at login.
 
-## Opsiyonel: Telefon / Uzaktan Erişim ve AIOStreams
+## Optional: Phone / Remote Access & AIOStreams
 
-Servisleri telefonunuzdan veya AIOStreams üzerinden dış erişimle kullanmak isterseniz:
+To access your self-hosted instance from your phone or connect it to AIOStreams externally:
 
-1. Klasördeki `.env.example` dosyasını kopyalayıp adını `.env` yapın.
-2. `.env` içinde `ENABLE_TUNNEL=1` ayarını açın ve gerekirse AIOStreams değişkenlerini (`AIOSTREAMS_BASE_URL`, `AIOSTREAMS_UUID`, `AIOSTREAMS_PASSWORD`) doldurun.
-3. `cloudflared` kurulu değilse yükleyin (`winget install Cloudflare.cloudflared`), ardından `baslat.bat` ile servisleri yeniden başlatın.
-4. Oluşan tünel adresi `.runtime/tunnel-url.txt` dosyasına yazılır; aynı `/configure`, `/saved/nuvio-repo/manifest.json` ve `/badges.json` uç noktaları tünel adresi üzerinden de çalışır.
+1. Copy `.env.example` and rename the copy to `.env`.
+2. Set `ENABLE_TUNNEL=1` inside `.env` and, if needed, fill in your AIOStreams variables (`AIOSTREAMS_BASE_URL`, `AIOSTREAMS_UUID`, `AIOSTREAMS_PASSWORD`).
+3. Install `cloudflared` if it is not already installed (`winget install Cloudflare.cloudflared`), then restart services with `baslat.bat`.
+4. The generated tunnel URL is written to `.runtime/tunnel-url.txt`. The same `/configure`, `/saved/nuvio-repo/manifest.json`, `/saved/manifest.json`, and `/badges.json` endpoints work over the tunnel URL as well.
 
-## Kısa Sorun Giderme
+## Quick Troubleshooting
 
-- **SmartScreen / PowerShell uyarısı**: `.bat` dosyaları PowerShell'i `-ExecutionPolicy Bypass` ile çağırır; Windows uyarısında **Ek bilgi → Yine de çalıştır** demeniz yeterlidir.
-- **Nuvio'da kaynak görünmüyor**: Servislerin çalıştığından emin olun (`http://127.0.0.1:3001/health`). Değişiklik sonrası `durdur.bat` ve ardından `baslat.bat` çalıştırıp Nuvio'da eklentileri yenileyin.
-- **Kartlarda Mbps veya kodek rozetleri görünmüyor**: `ffprobe` kurulu olmalıdır; `kur.bat` bunu WinGet üzerinden otomatik kurar veya `.env` içinde `FFPROBE_PATH` / `MEGA_FFPROBE` tanımlanabilir.
-- **Port çakışması (`7100` veya `3001`)**: Önce `durdur.bat` ile eski işlemleri kapatın, sonra `baslat.bat` ile temiz başlatın.
-- **Kurulum yarım kaldıysa**: `kur.bat` dosyasını yeniden çalıştırabilirsiniz; eksik bileşenler tekrar kontrol edilip tamamlanır.
+- **SmartScreen / PowerShell warning**: The `.bat` scripts invoke PowerShell with `-ExecutionPolicy Bypass`. Click **More info → Run anyway** if Windows prompts you.
+- **No streams showing in Nuvio**: Verify the services are running (`http://127.0.0.1:3001/health`). After configuration or update changes, run `durdur.bat` followed by `baslat.bat`, then refresh plugins in Nuvio.
+- **Mbps or codec badges missing on cards**: `ffprobe` must be available. `kur.bat` installs FFmpeg automatically via WinGet, or you can set `FFPROBE_PATH` / `MEGA_FFPROBE` in `.env`.
+- **Port conflict (`7100` or `3001`)**: Run `durdur.bat` first to stop leftover processes, then start cleanly with `baslat.bat`.
+- **Incomplete setup**: Simply run `kur.bat` again; it checks for and installs any missing components.
 
-## Lisans ve Üçüncü Taraf Bileşenler
+## License & Third-Party Notices
 
-- Proje lisansı: [LICENSE](LICENSE)
-- Üçüncü taraf lisans ve bildirimleri: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+- Project license: [LICENSE](LICENSE)
+- Third-party licenses and notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
-## Destek / Donate
+## Support / Donate
 
-Projeyi desteklemek isterseniz aşağıdaki adresler üzerinden bağış yapabilirsiniz:
+If you would like to support the project, you can donate using the addresses below:
 
-| Varlık | Ağ | Adres |
+| Asset | Network | Address |
 | :--- | :--- | :--- |
 | **USDT** | **X Layer** | `XKOde2f6fbcdace36d5ceebdf545e992d3036269259` |
 | **USDT** | **Tron (TRC20)** | `TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA` |
