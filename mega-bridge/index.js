@@ -3985,14 +3985,20 @@ const server = http.createServer(async (req, res) => {
 
   if (routeUrl === "/" || routeUrl === "/configure") {
     const uiCfg = cfgRaw ? cfg : parseConfig(loadSavedConfigStr());
-    const html = renderConfigureHtml(origin, uiCfg, LANG_CATALOG, await buildRepoCatalog(), { hasUrlCfg: Boolean(cfgRaw) });
+    let qUiLang = "";
+    try { qUiLang = new URL(req.url, origin).searchParams.get("uilang") || ""; } catch {}
+    const html = renderConfigureHtml(origin, uiCfg, LANG_CATALOG, await buildRepoCatalog(), {
+      hasUrlCfg: Boolean(cfgRaw),
+      acceptLanguage: String(req.headers["accept-language"] || ""),
+      uiLang: qUiLang,
+    });
     const etag = 'W/"' + crypto.createHash("sha1").update(html).digest("hex") + '"';
     const baseHdrs = {
       "Content-Type": "text/html; charset=utf-8",
       "Access-Control-Allow-Origin": "*",
       "Cache-Control": "no-cache",
       "ETag": etag,
-      "Vary": "Accept-Encoding",
+      "Vary": "Accept-Encoding, Accept-Language",
     };
     if (req.headers["if-none-match"] === etag) {
       res.writeHead(304, baseHdrs);

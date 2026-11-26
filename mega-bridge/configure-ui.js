@@ -1,5 +1,7 @@
 'use strict';
 
+const { UI_LANG_META, I18N, resolveUiLang } = require('./configure-i18n');
+
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -71,6 +73,15 @@ function flagIcon(code) {
 function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
   cfg = cfg || {};
   const hasUrlCfg = (opts && typeof opts.hasUrlCfg === 'boolean') ? opts.hasUrlCfg : Boolean(cfg && cfg.raw);
+  const initUiLang = resolveUiLang((opts && (opts.uiLang || opts.acceptLanguage)) || '');
+  const initMeta = UI_LANG_META[initUiLang] || UI_LANG_META.en;
+  const initDict = I18N[initUiLang] || I18N.en;
+  const tr = (k) => (initDict && initDict[k]) || I18N.en[k] || k;
+  const trf = (k, vars) => String(tr(k)).replace(/\{(\w+)\}/g, (_, n) => (vars && vars[n] !== undefined ? String(vars[n]) : ''));
+  const htmlDir = initMeta && initMeta.rtl ? 'rtl' : 'ltr';
+  const htmlLang = (initMeta && initMeta.bcp47) || 'en';
+  const uiLangOptions = '<option value="auto">' + esc(tr('uiLangAuto')) + '</option>' +
+    Object.entries(UI_LANG_META).map(([code, m]) => '<option value="' + esc(code) + '">' + esc(m.native) + '</option>').join('');
   const selectedArr = (cfg.langs && cfg.langs.length) ? cfg.langs.slice() : ['tr', 'en'];
   const selected = new Set(selectedArr);
   const langsArr = Object.values(catalog || {});
@@ -83,13 +94,15 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
   const cards = langsArr.map((l) => {
     const checked = selected.has(l.code) ? 'checked' : '';
     const cs3Tag = (Array.isArray(l.cs3Repos) && l.cs3Repos.length) ? ' + CS3' : '';
-    const badge = l.kind === 'trhub' ? 'CS3 + Nuvio' : l.kind === 'enhub' ? ('10 Repo' + cs3Tag) : l.repos ? (l.repos.length + ' Repo' + cs3Tag) : ('Dahili' + cs3Tag);
+    const badgeKind = l.kind === 'trhub' ? 'trhub' : l.kind === 'enhub' ? 'enhub' : l.repos ? 'repos' : 'builtin';
+    const badgeN = l.kind === 'enhub' ? 10 : (l.repos ? l.repos.length : 0);
+    const badge = badgeKind === 'trhub' ? 'CS3 + Nuvio' : badgeKind === 'enhub' ? ('10 ' + tr('badgeRepo') + cs3Tag) : badgeKind === 'repos' ? (badgeN + ' ' + tr('badgeRepo') + cs3Tag) : (tr('badgeBuiltin') + cs3Tag);
     return '<label class="lang-item' + (checked ? ' is-selected' : '') + '" data-code="' + esc(l.code) + '">' +
       '<input class="sr" type="checkbox" name="lang" value="' + esc(l.code) + '" ' + checked + ' />' +
       '<span class="flag" aria-hidden="true">' + flagIcon(l.code) + '</span>' +
       '<span class="lang-meta">' +
         '<span class="lang-name">' + esc(l.name) + '</span>' +
-        '<span class="lang-sub">' + esc(l.code.toUpperCase()) + ' · ' + esc(badge) + '</span>' +
+        '<span class="lang-sub" data-badge-code="' + esc(l.code.toUpperCase()) + '" data-badge-kind="' + esc(badgeKind) + '" data-badge-n="' + esc(badgeN) + '" data-badge-cs3="' + (cs3Tag ? '1' : '') + '">' + esc(l.code.toUpperCase()) + ' · ' + esc(badge) + '</span>' +
       '</span>' +
       '<span class="ord-badge hidden" data-ord="' + esc(l.code) + '"></span>' +
       '<span class="chk" aria-hidden="true"><svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><polyline points="2,6.5 4.8,9.2 10,3"/></svg></span>' +
@@ -132,16 +145,16 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     return '<div class="qlim-card" data-qcard="' + esc(q.id) + '">' +
       '<div class="qlim-top"><span class="qlim-name">' + esc(q.label) + '</span><span class="qlim-sub">' + esc(q.id) + '</span></div>' +
       '<div class="stepper">' +
-        '<button type="button" class="step-btn" data-step="-1" data-target="qmap_' + esc(q.id) + '" aria-label="Azalt">-</button>' +
+        '<button type="button" class="step-btn" data-step="-1" data-target="qmap_' + esc(q.id) + '" data-i18n-aria="decrease" aria-label="' + esc(tr('decrease')) + '">-</button>' +
         '<input type="number" min="0" max="50" class="num-inp" id="qmap_' + esc(q.id) + '" data-qmap="' + esc(q.id) + '" value="' + esc(val) + '" />' +
-        '<button type="button" class="step-btn" data-step="1" data-target="qmap_' + esc(q.id) + '" aria-label="Artir">+</button>' +
+        '<button type="button" class="step-btn" data-step="1" data-target="qmap_' + esc(q.id) + '" data-i18n-aria="increase" aria-label="' + esc(tr('increase')) + '">+</button>' +
       '</div>' +
     '</div>';
   }).join('\n');
 
-  const opt = (val, cur, label) => '<option value="' + esc(val) + '"' + (val === cur ? ' selected' : '') + '>' + esc(label) + '</option>';
+  const opt = (val, cur, label, i18nKey) => '<option value="' + esc(val) + '"' + (val === cur ? ' selected' : '') + (i18nKey ? ' data-i18n="' + esc(i18nKey) + '"' : '') + '>' + esc(label) + '</option>';
 
-  return '<!doctype html><html lang="tr"><head>' +
+  return '<!doctype html><html lang="' + esc(htmlLang) + '" dir="' + esc(htmlDir) + '"><head>' +
     '<meta charset="utf-8"/>' +
     '<meta name="viewport" content="width=device-width,initial-scale=1"/>' +
     '<meta name="color-scheme" content="light dark"/>' +
@@ -163,6 +176,10 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.45}' +
     '.shell{max-width:840px;margin:0 auto;padding:36px 20px 64px}' +
     '.hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:20px;margin-bottom:24px;border-bottom:1px solid var(--border)}' +
+    '.ui-lang-wrap{display:inline-flex;align-items:center;gap:8px}' +
+    '.ui-lang-lbl{font-size:12px;color:var(--fg-muted);white-space:nowrap}' +
+    '.ui-lang-sel{height:32px;padding:0 10px;font-size:12px;font-family:inherit;color:var(--fg);background:var(--surface-2);border:1px solid var(--border-strong);cursor:pointer;outline:none;max-width:220px}' +
+    '.ui-lang-sel:focus{border-color:var(--primary)}' +
     '.brand{display:flex;flex-direction:column;gap:4px}' +
     '.brand-row{display:flex;align-items:center;gap:10px}' +
     '.brand-mark{width:10px;height:10px;background:var(--primary);display:inline-block}' +
@@ -300,7 +317,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.btn-primary:hover{background:var(--primary-hover)}' +
     '.btn-flat{background:var(--surface-2);color:var(--fg);border-color:var(--border-strong)}' +
     '.btn-flat:hover{background:var(--surface-hover)}' +
-    '.status{margin-left:auto;font-size:12px;color:var(--ok);font-weight:500;min-height:18px}' +
+    '.status{margin-inline-start:auto;font-size:12px;color:var(--ok);font-weight:500;min-height:18px}' +
     '.preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}' +
     '.preview-lbl{font-size:11px;color:var(--fg-muted)}' +
     '.preview-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}' +
@@ -329,42 +346,46 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.bl-del{height:26px;padding:0 10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font:inherit;font-size:11px;cursor:pointer;flex-shrink:0}' +
     '.bl-del:hover{border-color:#f31260;color:#f31260}' +
     '.hidden{display:none!important}' +
-    '@media (max-width:640px){.hdr{flex-direction:column;align-items:flex-start}.ctrl-row{flex-direction:column;align-items:flex-start}.status{margin-left:0;width:100%}.qual-grid,.qlim-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.field-grid{grid-template-columns:1fr}}' +
+    '@media (max-width:640px){.hdr{flex-direction:column;align-items:flex-start}.ctrl-row{flex-direction:column;align-items:flex-start}.status{margin-inline-start:0;width:100%}.qual-grid,.qlim-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.field-grid{grid-template-columns:1fr}}' +
     '</style></head><body><main class="shell">' +
     '<header class="hdr">' +
       '<div class="brand">' +
         '<div class="brand-row"><span class="brand-mark"></span><h1>Lanettirr</h1></div>' +
       '</div>' +
+      '<label class="ui-lang-wrap">' +
+        '<span class="ui-lang-lbl" data-i18n="uiLangLabel">' + esc(tr('uiLangLabel')) + '</span>' +
+        '<select class="ui-lang-sel" id="uiLangSel" data-i18n-aria="uiLangLabel" aria-label="' + esc(tr('uiLangLabel')) + '">' + uiLangOptions + '</select>' +
+      '</label>' +
     '</header>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
-        '<span class="panel-title">Diller</span>' +
+        '<span class="panel-title" data-i18n="secLangs">' + esc(tr('secLangs')) + '</span>' +
         '<div class="panel-actions">' +
           '<span class="count" id="selCount"></span>' +
           '<button class="link-btn" id="presetTrEn" type="button">TR + EN</button>' +
-          '<button class="link-btn" id="clearBtn" type="button">Temizle</button>' +
+          '<button class="link-btn" id="clearBtn" type="button" data-i18n="clear">' + esc(tr('clear')) + '</button>' +
         '</div>' +
       '</div>' +
       '<div class="panel-body"><div class="lang-grid" id="langs">' + cards + '</div></div>' +
     '</section>' +
     '<section class="panel" id="reposPanel">' +
       '<div class="panel-head">' +
-        '<span class="panel-title">Hub Depoları (Aktif / Devre Dışı)</span>' +
+        '<span class="panel-title" data-i18n="secRepos">' + esc(tr('secRepos')) + '</span>' +
         '<div class="panel-actions">' +
           '<span class="count" id="repoCount"></span>' +
-          '<button class="link-btn" id="reposAllOn" type="button">Tümünü Aç</button>' +
-          '<button class="link-btn" id="reposAllOff" type="button">Tümünü Kapat</button>' +
+          '<button class="link-btn" id="reposAllOn" type="button" data-i18n="allOn">' + esc(tr('allOn')) + '</button>' +
+          '<button class="link-btn" id="reposAllOff" type="button" data-i18n="allOff">' + esc(tr('allOff')) + '</button>' +
         '</div>' +
       '</div>' +
       '<div class="panel-body"><div class="repo-groups" id="repoGroups"></div></div>' +
     '</section>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
-        '<span class="panel-title">Kaliteler (480p – 4K)</span>' +
+        '<span class="panel-title" data-i18n="secQuals">' + esc(tr('secQuals')) + '</span>' +
         '<div class="panel-actions">' +
           '<span class="count" id="qualCount"></span>' +
-          '<button class="link-btn" id="qAll" type="button">Hepsi</button>' +
-          '<button class="link-btn" id="qNo4k" type="button">4K Hariç</button>' +
+          '<button class="link-btn" id="qAll" type="button" data-i18n="qAll">' + esc(tr('qAll')) + '</button>' +
+          '<button class="link-btn" id="qNo4k" type="button" data-i18n="qNo4k">' + esc(tr('qNo4k')) + '</button>' +
           '<button class="link-btn" id="q1080" type="button">1080p+</button>' +
         '</div>' +
       '</div>' +
@@ -372,91 +393,91 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '</section>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
-        '<span class="panel-title">Sonuç Limitleri</span>' +
+        '<span class="panel-title" data-i18n="secLimits">' + esc(tr('secLimits')) + '</span>' +
         '<label class="switch-wrap">' +
           '<input class="sr" type="checkbox" id="qlimAllToggle" ' + (qlimMode === 'all' ? 'checked' : '') + ' />' +
           '<span class="switch-track"><span class="switch-thumb"></span></span>' +
-          '<span>Tüm kaliteler için tek limit</span>' +
+          '<span data-i18n="qlimSingleToggle">' + esc(tr('qlimSingleToggle')) + '</span>' +
         '</label>' +
       '</div>' +
       '<div class="panel-body">' +
         '<div id="qlimAllBox" class="lim-row' + (qlimMode === 'per' ? ' hidden' : '') + '">' +
-          '<div class="lim-info"><span class="lim-title">Kalite başına sonuç miktarı</span><span class="lim-hint">Her çözünürlükten en fazla kaç kaynak gelsin (0 = Sınırsız)</span></div>' +
+          '<div class="lim-info"><span class="lim-title" data-i18n="qlimAllTitle">' + esc(tr('qlimAllTitle')) + '</span><span class="lim-hint" data-i18n="qlimAllHint">' + esc(tr('qlimAllHint')) + '</span></div>' +
           '<div class="lim-ctrls">' +
             '<div class="quick-chips" data-qgroup="qlimAll">' +
               '<button type="button" class="qchip" data-val="1">1</button>' +
               '<button type="button" class="qchip" data-val="2">2</button>' +
               '<button type="button" class="qchip" data-val="3">3</button>' +
               '<button type="button" class="qchip" data-val="5">5</button>' +
-              '<button type="button" class="qchip" data-val="0">Sınırsız</button>' +
+              '<button type="button" class="qchip" data-val="0" data-i18n="unlimited">' + esc(tr('unlimited')) + '</button>' +
             '</div>' +
             '<div class="stepper">' +
-              '<button type="button" class="step-btn" data-step="-1" data-target="qlimAllInp" aria-label="Azalt">-</button>' +
+              '<button type="button" class="step-btn" data-step="-1" data-target="qlimAllInp" data-i18n-aria="decrease" aria-label="' + esc(tr('decrease')) + '">-</button>' +
               '<input type="number" min="0" max="50" class="num-inp" id="qlimAllInp" value="' + esc(qlimAll) + '" />' +
-              '<button type="button" class="step-btn" data-step="1" data-target="qlimAllInp" aria-label="Artir">+</button>' +
+              '<button type="button" class="step-btn" data-step="1" data-target="qlimAllInp" data-i18n-aria="increase" aria-label="' + esc(tr('increase')) + '">+</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
         '<div id="qlimPerBox" class="' + (qlimMode === 'all' ? 'hidden' : '') + '">' +
-          '<div class="lim-info" style="margin-bottom:10px"><span class="lim-title">Kalite başına ayrı sonuç miktarı</span><span class="lim-hint">Her kalite için ayrı limit girin (0 = Sınırsız)</span></div>' +
+          '<div class="lim-info" style="margin-bottom:10px"><span class="lim-title" data-i18n="qlimPerTitle">' + esc(tr('qlimPerTitle')) + '</span><span class="lim-hint" data-i18n="qlimPerHint">' + esc(tr('qlimPerHint')) + '</span></div>' +
           '<div class="qlim-grid">' + perQualLimitCards + '</div>' +
         '</div>' +
         '<div class="divider"></div>' +
         '<div class="lim-row">' +
-          '<div class="lim-info"><span class="lim-title">Hub başına toplam sonuç miktarı</span><span class="lim-hint">Bir hub içinde toplam en fazla kaç kaynak gösterilsin (0 = Sınırsız)</span></div>' +
+          '<div class="lim-info"><span class="lim-title" data-i18n="hubLimTitle">' + esc(tr('hubLimTitle')) + '</span><span class="lim-hint" data-i18n="hubLimHint">' + esc(tr('hubLimHint')) + '</span></div>' +
           '<div class="lim-ctrls">' +
             '<div class="quick-chips" data-qgroup="hubLim">' +
-              '<button type="button" class="qchip" data-val="0">Sınırsız</button>' +
+              '<button type="button" class="qchip" data-val="0" data-i18n="unlimited">' + esc(tr('unlimited')) + '</button>' +
               '<button type="button" class="qchip" data-val="5">5</button>' +
               '<button type="button" class="qchip" data-val="10">10</button>' +
               '<button type="button" class="qchip" data-val="15">15</button>' +
               '<button type="button" class="qchip" data-val="20">20</button>' +
             '</div>' +
             '<div class="stepper">' +
-              '<button type="button" class="step-btn" data-step="-1" data-target="hubLimInp" aria-label="Azalt">-</button>' +
+              '<button type="button" class="step-btn" data-step="-1" data-target="hubLimInp" data-i18n-aria="decrease" aria-label="' + esc(tr('decrease')) + '">-</button>' +
               '<input type="number" min="0" max="200" class="num-inp" id="hubLimInp" value="' + esc(hubLim) + '" />' +
-              '<button type="button" class="step-btn" data-step="1" data-target="hubLimInp" aria-label="Artir">+</button>' +
+              '<button type="button" class="step-btn" data-step="1" data-target="hubLimInp" data-i18n-aria="increase" aria-label="' + esc(tr('increase')) + '">+</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
     '</section>' +
     '<section class="panel">' +
-      '<div class="panel-head"><span class="panel-title">Sıralama ve Seçenekler</span></div>' +
+      '<div class="panel-head"><span class="panel-title" data-i18n="secSortOpts">' + esc(tr('secSortOpts')) + '</span></div>' +
       '<div class="panel-body">' +
         '<div class="sort-box">' +
           '<div class="sort-top">' +
-            '<span class="field-lbl">Hub içi kaynak sıralama önceliği (sürükle, oklarla taşı, yöne tıkla)</span>' +
+            '<span class="field-lbl" data-i18n="sortPriorityLbl">' + esc(tr('sortPriorityLbl')) + '</span>' +
             '<div class="quick-chips" id="sortPresets">' +
-              '<button type="button" class="qchip" data-sp="dub:desc,qual:desc,bitrate:desc,speed:asc">Dublaj → Kalite → Bitrate → Hız</button>' +
-              '<button type="button" class="qchip" data-sp="qual:desc,bitrate:desc,speed:asc,dub:desc">Kalite → Bitrate → Hız</button>' +
-              '<button type="button" class="qchip" data-sp="speed:asc,qual:desc,bitrate:desc,dub:desc">En Hızlı → Kalite</button>' +
-              '<button type="button" class="qchip" data-sp="bitrate:desc,qual:desc,speed:asc,dub:desc">En Yüksek Bitrate</button>' +
-              '<button type="button" class="qchip" data-sp="dub:asc,qual:desc,bitrate:desc,speed:asc">Altyazı Öncelikli</button>' +
+              '<button type="button" class="qchip" data-sp="dub:desc,qual:desc,bitrate:desc,speed:asc" data-i18n="spDubQual">' + esc(tr('spDubQual')) + '</button>' +
+              '<button type="button" class="qchip" data-sp="qual:desc,bitrate:desc,speed:asc,dub:desc" data-i18n="spQualBit">' + esc(tr('spQualBit')) + '</button>' +
+              '<button type="button" class="qchip" data-sp="speed:asc,qual:desc,bitrate:desc,dub:desc" data-i18n="spSpeedQual">' + esc(tr('spSpeedQual')) + '</button>' +
+              '<button type="button" class="qchip" data-sp="bitrate:desc,qual:desc,speed:asc,dub:desc" data-i18n="spBitrate">' + esc(tr('spBitrate')) + '</button>' +
+              '<button type="button" class="qchip" data-sp="dub:asc,qual:desc,bitrate:desc,speed:asc" data-i18n="spSub">' + esc(tr('spSub')) + '</button>' +
             '</div>' +
           '</div>' +
           '<div class="sort-list" id="sortOrderList"></div>' +
         '</div>' +
         '<div class="field-grid" style="grid-template-columns:1fr">' +
           '<label class="field">' +
-            '<span class="field-lbl">Hub sıralaması</span>' +
+            '<span class="field-lbl" data-i18n="hubSortLbl">' + esc(tr('hubSortLbl')) + '</span>' +
             '<select class="sel" id="hubSort">' +
-              opt('custom', hubSort, 'Seçim Sırasına Göre / Elle Sırala') +
-              opt('catalog', hubSort, 'Varsayılan Katalog Sırası') +
-              opt('code_asc', hubSort, 'Hub Kodu (A → Z)') +
-              opt('code_desc', hubSort, 'Hub Kodu (Z → A)') +
-              opt('name_asc', hubSort, 'Dil Adı (A → Z)') +
-              opt('name_desc', hubSort, 'Dil Adı (Z → A)') +
+              opt('custom', hubSort, tr('hsCustom'), 'hsCustom') +
+              opt('catalog', hubSort, tr('hsCatalog'), 'hsCatalog') +
+              opt('code_asc', hubSort, tr('hsCodeAsc'), 'hsCodeAsc') +
+              opt('code_desc', hubSort, tr('hsCodeDesc'), 'hsCodeDesc') +
+              opt('name_asc', hubSort, tr('hsNameAsc'), 'hsNameAsc') +
+              opt('name_desc', hubSort, tr('hsNameDesc'), 'hsNameDesc') +
             '</select>' +
           '</label>' +
         '</div>' +
         '<div id="hubOrderBox" class="hub-order-box">' +
-          '<span class="hub-order-lbl">Seçtiğin sıraya göre dizilir — sürükleyerek veya ‹ › oklarıyla sırayı değiştirebilirsin:</span>' +
+          '<span class="hub-order-lbl" data-i18n="hubOrderHint">' + esc(tr('hubOrderHint')) + '</span>' +
           '<div class="hub-order-list" id="hubOrderList"></div>' +
         '</div>' +
         '<div class="divider"></div>' +
         '<div class="lim-row">' +
-          '<div class="lim-info"><span class="lim-title">Sağlayıcı zaman aşımı (Timeout)</span><span class="lim-hint">Hub içi kaynakların yanıt bekleme süresi (10–90 sn)</span></div>' +
+          '<div class="lim-info"><span class="lim-title" data-i18n="timeoutTitle">' + esc(tr('timeoutTitle')) + '</span><span class="lim-hint" data-i18n="timeoutHint">' + esc(tr('timeoutHint')) + '</span></div>' +
           '<div class="lim-ctrls">' +
             '<div class="quick-chips" data-qgroup="timeoutSec">' +
               '<button type="button" class="qchip" data-val="15">15s</button>' +
@@ -466,9 +487,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
               '<button type="button" class="qchip" data-val="90">90s</button>' +
             '</div>' +
             '<div class="stepper">' +
-              '<button type="button" class="step-btn" data-step="-5" data-target="timeoutInp" aria-label="Azalt">-</button>' +
+              '<button type="button" class="step-btn" data-step="-5" data-target="timeoutInp" data-i18n-aria="decrease" aria-label="' + esc(tr('decrease')) + '">-</button>' +
               '<input type="number" min="10" max="90" class="num-inp" id="timeoutInp" value="' + esc(timeoutSec) + '" />' +
-              '<button type="button" class="step-btn" data-step="5" data-target="timeoutInp" aria-label="Artir">+</button>' +
+              '<button type="button" class="step-btn" data-step="5" data-target="timeoutInp" data-i18n-aria="increase" aria-label="' + esc(tr('increase')) + '">+</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -477,21 +498,21 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
           '<label class="switch-wrap">' +
             '<input class="sr" type="checkbox" id="hubSeqOn" ' + hubSeqOn + ' />' +
             '<span class="switch-track"><span class="switch-thumb"></span></span>' +
-            '<span>Hub\'ları Sırayla Gönder (İlk Gelen Sırası Koruması)</span>' +
+            '<span data-i18n="hubSeqTitle">' + esc(tr('hubSeqTitle')) + '</span>' +
           '</label>' +
-          '<span class="lim-hint">Paralel indirme sürerken hub\'ları tam seçtiğin sırayla Nuvio\'ya teslim eder</span>' +
+          '<span class="lim-hint" data-i18n="hubSeqHint">' + esc(tr('hubSeqHint')) + '</span>' +
         '</div>' +
         '<div class="divider"></div>' +
         '<div class="ctrl-row">' +
           '<label class="switch-wrap">' +
             '<input class="sr" type="checkbox" id="failoverOn" ' + failoverOn + ' />' +
             '<span class="switch-track"><span class="switch-thumb"></span></span>' +
-            '<span>Açılmayan Kaynakta Otomatik Geçiş + Kara Liste</span>' +
+            '<span data-i18n="failoverTitle">' + esc(tr('failoverTitle')) + '</span>' +
           '</label>' +
-          '<span class="lim-hint">Yayın başlatılırken belirlenen sürede açılmayan kaynağı o film/bölüm için kara listeye alır ve otomatik en yakın diğer kaynağa geçer</span>' +
+          '<span class="lim-hint" data-i18n="failoverHint">' + esc(tr('failoverHint')) + '</span>' +
         '</div>' +
         '<div class="lim-row" id="failoverBox">' +
-          '<div class="lim-info"><span class="lim-title">Açılış zaman aşımı (Failover)</span><span class="lim-hint">Kaynak bu sürede açılmazsa kara listeye alınıp sıradakine geçilir (5–45 sn)</span></div>' +
+          '<div class="lim-info"><span class="lim-title" data-i18n="failoverToTitle">' + esc(tr('failoverToTitle')) + '</span><span class="lim-hint" data-i18n="failoverToHint">' + esc(tr('failoverToHint')) + '</span></div>' +
           '<div class="lim-ctrls">' +
             '<div class="quick-chips" data-qgroup="failoverSec">' +
               '<button type="button" class="qchip" data-val="10">10s</button>' +
@@ -501,9 +522,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
               '<button type="button" class="qchip" data-val="45">45s</button>' +
             '</div>' +
             '<div class="stepper">' +
-              '<button type="button" class="step-btn" data-step="-5" data-target="failoverInp" aria-label="Azalt">-</button>' +
+              '<button type="button" class="step-btn" data-step="-5" data-target="failoverInp" data-i18n-aria="decrease" aria-label="' + esc(tr('decrease')) + '">-</button>' +
               '<input type="number" min="5" max="45" class="num-inp" id="failoverInp" value="' + esc(failoverSec) + '" />' +
-              '<button type="button" class="step-btn" data-step="5" data-target="failoverInp" aria-label="Artir">+</button>' +
+              '<button type="button" class="step-btn" data-step="5" data-target="failoverInp" data-i18n-aria="increase" aria-label="' + esc(tr('increase')) + '">+</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -511,37 +532,37 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '</section>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
-        '<span class="panel-title">Kara Liste Yönetimi</span>' +
+        '<span class="panel-title" data-i18n="secBlacklist">' + esc(tr('secBlacklist')) + '</span>' +
         '<div class="panel-actions">' +
-          '<span class="count" id="blCount">0 kayıt</span>' +
-          '<button type="button" class="link-btn" id="blRefreshBtn">Yenile</button>' +
-          '<button type="button" class="link-btn" id="blClearBtn">Tümünü Temizle</button>' +
+          '<span class="count" id="blCount">' + esc(trf('blCount', { n: 0 })) + '</span>' +
+          '<button type="button" class="link-btn" id="blRefreshBtn" data-i18n="refresh">' + esc(tr('refresh')) + '</button>' +
+          '<button type="button" class="link-btn" id="blClearBtn" data-i18n="clearAll">' + esc(tr('clearAll')) + '</button>' +
         '</div>' +
       '</div>' +
       '<div class="panel-body">' +
         '<div class="bl-form">' +
-          '<input type="text" class="bl-inp" id="blMediaInp" placeholder="ör. movie|tmdb:124905 veya movie:124905 (boş = tümü)" />' +
-          '<input type="text" class="bl-inp" id="blProvInp" placeholder="Sağlayıcı adı (ör. DiziLife)" />' +
-          '<input type="text" class="bl-inp" id="blUrlInp" placeholder="Akış URL (isteğe bağlı)" />' +
-          '<button type="button" class="btn btn-flat" id="blAddBtn">Ekle</button>' +
+          '<input type="text" class="bl-inp" id="blMediaInp" data-i18n-ph="blMediaPh" placeholder="' + esc(tr('blMediaPh')) + '" />' +
+          '<input type="text" class="bl-inp" id="blProvInp" data-i18n-ph="blProvPh" placeholder="' + esc(tr('blProvPh')) + '" />' +
+          '<input type="text" class="bl-inp" id="blUrlInp" data-i18n-ph="blUrlPh" placeholder="' + esc(tr('blUrlPh')) + '" />' +
+          '<button type="button" class="btn btn-flat" id="blAddBtn" data-i18n="add">' + esc(tr('add')) + '</button>' +
         '</div>' +
-        '<div class="bl-list" id="blList"><span class="count">Yükleniyor...</span></div>' +
+        '<div class="bl-list" id="blList"><span class="count" data-i18n="loading">' + esc(tr('loading')) + '</span></div>' +
       '</div>' +
     '</section>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
-        '<span class="panel-title">Kurulum Linki</span>' +
-        '<div class="seg" role="group" aria-label="Kurulum Tipi">' +
-          '<button type="button" data-install="nuvio" class="is-active">Nuvio Tek Repo (Ayrı Hub Sekmeleri)</button>' +
-          '<button type="button" data-install="aio">AIOStreams / Stremio</button>' +
+        '<span class="panel-title" data-i18n="secInstall">' + esc(tr('secInstall')) + '</span>' +
+        '<div class="seg" role="group" data-i18n-aria="installTypeAria" aria-label="' + esc(tr('installTypeAria')) + '">' +
+          '<button type="button" data-install="nuvio" class="is-active" data-i18n="instNuvio">' + esc(tr('instNuvio')) + '</button>' +
+          '<button type="button" data-install="aio" data-i18n="instAio">' + esc(tr('instAio')) + '</button>' +
         '</div>' +
       '</div>' +
       '<div class="panel-body">' +
         '<div class="preview-head">' +
           '<span class="preview-lbl" id="previewHint"></span>' +
-          '<div class="seg" role="group" aria-label="Link Tipi">' +
-            '<button type="button" data-linkmode="saved" class="is-active">Sabit Link (Kaydet + ↻ Yenile)</button>' +
-            '<button type="button" data-linkmode="inline">Paylaşım Linki</button>' +
+          '<div class="seg" role="group" data-i18n-aria="linkTypeAria" aria-label="' + esc(tr('linkTypeAria')) + '">' +
+            '<button type="button" data-linkmode="saved" class="is-active" data-i18n="linkSaved">' + esc(tr('linkSaved')) + '</button>' +
+            '<button type="button" data-linkmode="inline" data-i18n="linkInline">' + esc(tr('linkInline')) + '</button>' +
           '</div>' +
         '</div>' +
         '<div class="preview-chips" id="previewChips"></div>' +
@@ -549,15 +570,15 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
         '<div class="btn-row">' +
           '<button class="btn btn-primary" id="saveBtn" type="button">' +
             '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2h8l2 2v10H3V2z"/><path d="M5 2v4h5V2"/><rect x="5" y="9" width="6" height="5"/></svg>' +
-            '<span>Ayarları Kaydet</span>' +
+            '<span data-i18n="saveBtn">' + esc(tr('saveBtn')) + '</span>' +
           '</button>' +
           '<button class="btn btn-flat" id="copyBtn" type="button">' +
             '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9"/><path d="M11 5V2H2v9h3"/></svg>' +
-            '<span>Linki Kopyala</span>' +
+            '<span data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</span>' +
           '</button>' +
           '<a class="btn btn-flat hidden" id="stremioBtn" href="#">' +
             '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3H3v10h10v-3"/><path d="M9 2h5v5"/><path d="M14 2L7 9"/></svg>' +
-            '<span>Stremio / AIOStreams\'de Aç</span>' +
+            '<span data-i18n="stremioBtn">' + esc(tr('stremioBtn')) + '</span>' +
           '</a>' +
           '<span class="status" id="status"></span>' +
         '</div>' +
@@ -567,6 +588,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '<script>' +
     'const ORIGIN = ' + safeScriptJson(origin) + ';' +
     'const HAS_URL_CFG = ' + safeScriptJson(hasUrlCfg) + ';' +
+    'const INIT_UI_LANG = ' + safeScriptJson(initUiLang) + ';' +
+    'const UI_LANG_META = ' + safeScriptJson(UI_LANG_META) + ';' +
+    'const I18N = ' + safeScriptJson(I18N) + ';' +
     'const STORAGE_KEY = "nuvio_mega_cfg_v1";' +
     'const UI_PREFS_KEY = "nuvio_mega_ui_prefs_v1";' +
     'const CATALOG_ORDER = ' + safeScriptJson(catalogOrder) + ';' +
@@ -582,15 +606,63 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'const openDrawers = {};' +
     'let installMode = "nuvio";' +
     'let linkMode = "saved";' +
+    'let uiLangPref = "auto";' +
+    'let activeUiLang = INIT_UI_LANG;' +
+    'let lastBlItems = null;' +
     'let lastCfgStr = "";' +
     'let statusTimer = null;' +
-    'const SORT_META = { dub: { name: "Ses/Dublaj", desc: "Dublaj", asc: "Altyazı" }, qual: { name: "Kalite", desc: "4K↓", asc: "480p↑" }, bitrate: { name: "Bitrate", desc: "Yüksek↓", asc: "Düşük↑" }, speed: { name: "Hız", asc: "Hızlı↑", desc: "Yavaş↓" }, prov: { name: "Sağlayıcı", asc: "A→Z", desc: "Z→A" } };' +
     'const ALL_SORT_KEYS = ["dub", "qual", "bitrate", "speed", "prov"];' +
+    'const VALID_SORT_KEYS = new Set(ALL_SORT_KEYS);' +
+    'function matchBrowserLang(list) {' +
+    '  for (const raw of (list || [])) {' +
+    '    const tag = String(raw || "").trim().toLowerCase().replace(/_/g, "-");' +
+    '    if (!tag) continue;' +
+    '    const exact = tag.replace(/-/g, "_");' +
+    '    if (I18N[exact]) return exact;' +
+    '    const parts = tag.split("-"); const base = parts[0]; const reg = parts[1] || ""; const reg2 = parts[2] || "";' +
+    '    if (base === "zh") { if (reg === "hk" || reg === "mo") return "yue"; if (reg === "tw" || reg === "hant" || reg2 === "tw") return "zh_tw"; if (reg === "cn" || reg === "sg" || reg === "hans" || reg2 === "cn") return "zh_cn"; return "zh"; }' +
+    '    if (base === "es") { if (reg === "es") return "es_es"; if (reg && reg !== "es") return "es_la"; return "es"; }' +
+    '    if (base === "pt") { if (reg === "br") return "pt_br"; return "pt"; }' +
+    '    if (base === "en") { if (reg === "us") return "en_us"; if (reg === "gb" || reg === "uk") return "en_uk"; return "en"; }' +
+    '    if (base === "fr") { if (reg === "ca") return "fr_ca"; return "fr"; }' +
+    '    if (base === "fil") return "tl";' +
+    '    if (base === "nb" || base === "nn") return "no";' +
+    '    if (base === "yue") return "yue";' +
+    '    if (I18N[base]) return base;' +
+    '  }' +
+    '  return INIT_UI_LANG || "en";' +
+    '}' +
+    'function detectBrowserUiLang() {' +
+    '  try { const nav = (Array.isArray(navigator.languages) && navigator.languages.length) ? navigator.languages : (navigator.language ? [navigator.language] : []); if (nav.length) return matchBrowserLang(nav); } catch {}' +
+    '  return INIT_UI_LANG || "en";' +
+    '}' +
+    'function t(k) { const d = I18N[activeUiLang] || I18N.en; return (d && d[k]) || I18N.en[k] || k; }' +
+    'function tf(k, vars) { return String(t(k)).replace(/\{(\w+)\}/g, (_, n) => (vars && vars[n] !== undefined ? String(vars[n]) : "")); }' +
+    'function activeLocale() { return (UI_LANG_META[activeUiLang] && UI_LANG_META[activeUiLang].bcp47) || "en-US"; }' +
+    'function locRepoName(r) { return r && r.id === "tr_nuvio" ? t("repoTrNuvio") : (r && r.name) || ""; }' +
+    'function locRepoSub(r) {' +
+    '  const s = String((r && r.sub) || "");' +
+    '  if (!s) return "";' +
+    '  if (s === "Dahili sağlayıcı") return t("repoBuiltinProv");' +
+    '  if (s === "Çoklu-dil / Çapraz ses") return t("repoMultiLangFallback");' +
+    '  const ml = s.match(/^(\d+)\s+çoklu-dil sağlayıcı$/i);' +
+    '  if (ml) return tf("repoMultiLangProv", { n: ml[1] });' +
+    '  return s.replace(/\bkaynak\b/g, t("repoSourcesUnit"));' +
+    '}' +
+    'function getSortMeta() {' +
+    '  return {' +
+    '    dub: { name: t("smDubName"), desc: t("smDubDesc"), asc: t("smDubAsc") },' +
+    '    qual: { name: t("smQualName"), desc: "4K↓", asc: "480p↑" },' +
+    '    bitrate: { name: t("smBitName"), desc: t("smBitDesc"), asc: t("smBitAsc") },' +
+    '    speed: { name: t("smSpeedName"), asc: t("smSpeedAsc"), desc: t("smSpeedDesc") },' +
+    '    prov: { name: t("smProvName"), asc: "A→Z", desc: "Z→A" }' +
+    '  };' +
+    '}' +
     'function parseSortUi(str) {' +
     '  const map = { dub_qual: "dub:desc,qual:desc,bitrate:desc,speed:asc", qual_desc: "qual:desc,bitrate:desc,speed:asc,dub:desc", qual_asc: "qual:asc,speed:asc,bitrate:desc,dub:desc", sub_qual: "dub:asc,qual:desc,bitrate:desc,speed:asc", speed_asc: "speed:asc,qual:desc,bitrate:desc,dub:desc", bitrate_desc: "qual:desc,bitrate:desc,speed:asc,dub:desc", provider_asc: "prov:asc,qual:desc,speed:asc", provider_desc: "prov:desc,qual:desc,speed:asc" };' +
     '  const raw = map[str] || str || "qual:desc,bitrate:desc,speed:asc,dub:desc";' +
     '  const active = []; const seen = new Set();' +
-    '  raw.split(",").forEach(p => { const [k, d] = p.trim().split(":"); if (SORT_META[k] && !seen.has(k)) { seen.add(k); active.push({ k, d: d === "asc" ? "asc" : "desc", on: true }); } });' +
+    '  raw.split(",").forEach(p => { const [k, d] = p.trim().split(":"); if (VALID_SORT_KEYS.has(k) && !seen.has(k)) { seen.add(k); active.push({ k, d: d === "asc" ? "asc" : "desc", on: true }); } });' +
     '  ALL_SORT_KEYS.forEach(k => { if (!seen.has(k)) active.push({ k, d: k === "speed" || k === "prov" ? "asc" : "desc", on: false }); });' +
     '  return active;' +
     '}' +
@@ -607,6 +679,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'const hubOrderList = document.getElementById("hubOrderList");' +
     'const repoGroups = document.getElementById("repoGroups");' +
     'const repoCount = document.getElementById("repoCount");' +
+    'const uiLangSel = document.getElementById("uiLangSel");' +
     'let dragFrom = -1;' +
     'const inputs = [...document.querySelectorAll("input[name=lang]")];' +
     'const qInputs = [...document.querySelectorAll("input[name=qual]")];' +
@@ -629,8 +702,8 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  if (mode === "catalog") a.sort((x, y) => CATALOG_ORDER.indexOf(x) - CATALOG_ORDER.indexOf(y));' +
     '  else if (mode === "code_asc") a.sort((x, y) => x.localeCompare(y));' +
     '  else if (mode === "code_desc") a.sort((x, y) => y.localeCompare(x));' +
-    '  else if (mode === "name_asc") a.sort((x, y) => (CATALOG_NAMES[x] || x).localeCompare(CATALOG_NAMES[y] || y, "tr"));' +
-    '  else if (mode === "name_desc") a.sort((x, y) => (CATALOG_NAMES[y] || y).localeCompare(CATALOG_NAMES[x] || x, "tr"));' +
+    '  else if (mode === "name_asc") a.sort((x, y) => (CATALOG_NAMES[x] || x).localeCompare(CATALOG_NAMES[y] || y, activeLocale()));' +
+    '  else if (mode === "name_desc") a.sort((x, y) => (CATALOG_NAMES[y] || y).localeCompare(CATALOG_NAMES[x] || x, activeLocale()));' +
     '  return a;' +
     '}' +
     'function syncLangOrder() {' +
@@ -648,7 +721,28 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  if (msg && ms > 0) statusTimer = setTimeout(() => { statusEl.textContent = ""; statusEl.style.color = ""; }, ms);' +
     '}' +
     'function saveUiPrefs() {' +
-    '  try { localStorage.setItem(UI_PREFS_KEY, JSON.stringify({ installMode, linkMode })); } catch {}' +
+    '  try { localStorage.setItem(UI_PREFS_KEY, JSON.stringify({ installMode, linkMode, uiLang: uiLangPref })); } catch {}' +
+    '}' +
+    'function applyUiLang(pref, rerender) {' +
+    '  uiLangPref = (pref && pref !== "auto" && I18N[pref]) ? pref : "auto";' +
+    '  activeUiLang = uiLangPref === "auto" ? detectBrowserUiLang() : uiLangPref;' +
+    '  const meta = UI_LANG_META[activeUiLang] || UI_LANG_META.en;' +
+    '  document.documentElement.lang = (meta && meta.bcp47) || "en";' +
+    '  document.documentElement.dir = (meta && meta.rtl) ? "rtl" : "ltr";' +
+    '  if (uiLangSel) {' +
+    '    uiLangSel.value = uiLangPref;' +
+    '    const autoOpt = uiLangSel.querySelector("option[value=auto]");' +
+    '    if (autoOpt) autoOpt.textContent = t("uiLangAuto");' +
+    '  }' +
+    '  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });' +
+    '  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });' +
+    '  document.querySelectorAll("[data-i18n-aria]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });' +
+    '  document.querySelectorAll("[data-badge-kind]").forEach(el => {' +
+    '    const code = el.dataset.badgeCode || ""; const kind = el.dataset.badgeKind; const n = el.dataset.badgeN || "0"; const cs3 = el.dataset.badgeCs3 ? " + CS3" : "";' +
+    '    const b = kind === "trhub" ? "CS3 + Nuvio" : kind === "enhub" ? ("10 " + t("badgeRepo") + cs3) : kind === "repos" ? (n + " " + t("badgeRepo") + cs3) : (t("badgeBuiltin") + cs3);' +
+    '    el.textContent = code + " · " + b;' +
+    '  });' +
+    '  if (rerender) { renderAll(false); if (lastBlItems !== null) renderBlacklist(lastBlItems); }' +
     '}' +
     'function getSortString() {' +
     '  const activeSort = sortState.filter(x => x.on);' +
@@ -657,12 +751,12 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'function syncControlStates() {' +
     '  syncLangOrder();' +
     '  inputs.forEach(i => i.closest(".lang-item").classList.toggle("is-selected", i.checked));' +
-    '  selCount.textContent = langOrder.length + " dil seçili";' +
+    '  selCount.textContent = tf("selCount", { n: langOrder.length });' +
     '  const qPicked = qInputs.filter(i => i.checked).map(i => i.value);' +
     '  const qs = qPicked.length ? qPicked : ["2160p", "1440p", "1080p", "720p"];' +
     '  const qSet = new Set(qs);' +
     '  qInputs.forEach(i => i.closest(".qual-item").classList.toggle("is-selected", i.checked));' +
-    '  qualCount.textContent = qPicked.length + " kalite seçili";' +
+    '  qualCount.textContent = tf("qualCount", { n: qPicked.length });' +
     '  const allMode = qlimAllToggle.checked;' +
     '  qlimAllBox.classList.toggle("hidden", !allMode);' +
     '  qlimPerBox.classList.toggle("hidden", allMode);' +
@@ -678,6 +772,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '}' +
     'function renderSortList() {' +
     '  const ssort = getSortString();' +
+    '  const SORT_META = getSortMeta();' +
     '  document.querySelectorAll("#sortPresets .qchip").forEach(b => b.classList.toggle("is-active", b.dataset.sp === ssort));' +
     '  sortOrderList.innerHTML = "";' +
     '  let ordNo = 0;' +
@@ -693,9 +788,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    bL.addEventListener("click", () => { if (idx > 0) { [sortState[idx-1], sortState[idx]] = [sortState[idx], sortState[idx-1]]; renderSortList(); syncOutputUrl(true); } });' +
     '    const num = document.createElement("span"); num.className = "h-num"; num.textContent = item.on ? ((++ordNo) + ".") : "-";' +
     '    const lbl = document.createElement("span"); lbl.textContent = meta.name;' +
-    '    const bDir = document.createElement("button"); bDir.type = "button"; bDir.className = "s-dir"; bDir.title = "Yönü değiştir"; bDir.textContent = item.d === "asc" ? meta.asc : meta.desc;' +
+    '    const bDir = document.createElement("button"); bDir.type = "button"; bDir.className = "s-dir"; bDir.title = t("sortDirTitle"); bDir.textContent = item.d === "asc" ? meta.asc : meta.desc;' +
     '    bDir.addEventListener("click", () => { item.d = item.d === "asc" ? "desc" : "asc"; item.on = true; renderSortList(); syncOutputUrl(true); });' +
-    '    const bOn = document.createElement("button"); bOn.type = "button"; bOn.className = "s-on"; bOn.title = item.on ? "Kriteri kapat" : "Kriteri aç"; bOn.textContent = item.on ? "✓" : "○";' +
+    '    const bOn = document.createElement("button"); bOn.type = "button"; bOn.className = "s-on"; bOn.title = item.on ? t("sortOffTitle") : t("sortOnTitle"); bOn.textContent = item.on ? "✓" : "○";' +
     '    bOn.addEventListener("click", () => { item.on = !item.on; renderSortList(); syncOutputUrl(true); });' +
     '    const bR = document.createElement("button"); bR.type = "button"; bR.className = "mv-btn"; bR.textContent = "\u203a"; bR.disabled = idx === sortState.length - 1;' +
     '    bR.addEventListener("click", () => { if (idx < sortState.length - 1) { [sortState[idx+1], sortState[idx]] = [sortState[idx], sortState[idx+1]]; renderSortList(); syncOutputUrl(true); } });' +
@@ -722,8 +817,8 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    const titleTxt = document.createElement("span"); titleTxt.textContent = code.toUpperCase() + " Hub · " + (CATALOG_NAMES[code] || code);' +
     '    gt.append(flagSp, titleTxt);' +
     '    const ga = document.createElement("span"); ga.className = "repo-gact";' +
-    '    const gc = document.createElement("span"); gc.className = "count"; gc.textContent = gOn + " / " + list.length + " aktif";' +
-    '    const gBtn = document.createElement("button"); gBtn.type = "button"; gBtn.className = "link-btn"; gBtn.textContent = gOn === list.length ? "Kapat" : "Hepsini Aç";' +
+    '    const gc = document.createElement("span"); gc.className = "count"; gc.textContent = tf("grpActive", { on: gOn, total: list.length });' +
+    '    const gBtn = document.createElement("button"); gBtn.type = "button"; gBtn.className = "link-btn"; gBtn.textContent = gOn === list.length ? t("grpClose") : t("grpOpenAll");' +
     '    gBtn.addEventListener("click", () => { if (gOn === list.length) list.forEach(r => disabledRepos.add(r.id)); else list.forEach(r => disabledRepos.delete(r.id)); renderRepoGroups(); syncOutputUrl(true); });' +
     '    ga.append(gc, gBtn); gh.append(gt, ga); grp.appendChild(gh);' +
     '    const grid = document.createElement("div"); grid.className = "repo-grid";' +
@@ -735,7 +830,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      const dw = document.createElement("div"); dw.className = "src-drawer";' +
     '      drawerHost.appendChild(dw);' +
     '      if (!srcCache[dk]) {' +
-    '        const loadingSp = document.createElement("span"); loadingSp.className = "count"; loadingSp.textContent = "Kaynaklar yükleniyor..."; dw.appendChild(loadingSp);' +
+    '        const loadingSp = document.createElement("span"); loadingSp.className = "count"; loadingSp.textContent = t("srcLoading"); dw.appendChild(loadingSp);' +
     '        if (!srcPending[dk]) {' +
     '          srcPending[dk] = fetch(ORIGIN + "/api/repo-sources?lang=" + encodeURIComponent(code) + "&repo=" + encodeURIComponent(r.id))' +
     '            .then(res => res.ok ? res.json() : Promise.reject(new Error("HTTP " + res.status)))' +
@@ -750,11 +845,12 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      dw.innerHTML = "";' +
     '      const bar = document.createElement("div"); bar.className = "src-bar";' +
     '      const titleSp = document.createElement("span"); titleSp.className = "count";' +
-    '      const srch = document.createElement("input"); srch.type = "text"; srch.className = "src-search"; srch.placeholder = r.name + " içinde ara...";' +
+    '      const rDispName = locRepoName(r);' +
+    '      const srch = document.createElement("input"); srch.type = "text"; srch.className = "src-search"; srch.placeholder = tf("srcSearchPh", { name: rDispName });' +
     '      const actSp = document.createElement("span"); actSp.className = "repo-gact";' +
-    '      const bOn = document.createElement("button"); bOn.type = "button"; bOn.className = "link-btn"; bOn.textContent = "Hepsini Aç";' +
-    '      const bOff = document.createElement("button"); bOff.type = "button"; bOff.className = "link-btn"; bOff.textContent = "Hepsini Kapat";' +
-    '      const bCls = document.createElement("button"); bCls.type = "button"; bCls.className = "link-btn"; bCls.textContent = "Kapat ✕";' +
+    '      const bOn = document.createElement("button"); bOn.type = "button"; bOn.className = "link-btn"; bOn.textContent = t("srcAllOn");' +
+    '      const bOff = document.createElement("button"); bOff.type = "button"; bOff.className = "link-btn"; bOff.textContent = t("srcAllOff");' +
+    '      const bCls = document.createElement("button"); bCls.type = "button"; bCls.className = "link-btn"; bCls.textContent = t("srcClose");' +
     '      actSp.append(bOn, bOff, bCls);' +
     '      bar.append(titleSp, srch, actSp);' +
     '      const chips = document.createElement("div"); chips.className = "src-chips";' +
@@ -762,10 +858,10 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      function drawChips() {' +
     '        const q = srch.value.trim().toLowerCase();' +
     '        const activeCnt = items.filter(it => !disabledProvs.has(it.id)).length;' +
-    '        titleSp.textContent = r.name + ": " + activeCnt + " / " + items.length + " kaynak aktif";' +
+    '        titleSp.textContent = tf("srcActiveCnt", { name: rDispName, on: activeCnt, total: items.length });' +
     '        chips.innerHTML = "";' +
     '        const shown = q ? items.filter(it => it.name.toLowerCase().includes(q)) : items;' +
-    '        if (!shown.length) { const emptySp = document.createElement("span"); emptySp.className = "count"; emptySp.textContent = "Kaynak bulunamadı"; chips.appendChild(emptySp); return; }' +
+    '        if (!shown.length) { const emptySp = document.createElement("span"); emptySp.className = "count"; emptySp.textContent = t("srcEmpty"); chips.appendChild(emptySp); return; }' +
     '        const frag = document.createDocumentFragment();' +
     '        shown.forEach(it => {' +
     '          const off = disabledProvs.has(it.id);' +
@@ -789,8 +885,8 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      const btn = document.createElement("button"); btn.type = "button"; btn.className = "repo-card" + (isOff ? " is-off" : "");' +
     '      btn.setAttribute("aria-pressed", String(!isOff));' +
     '      const meta = document.createElement("span"); meta.className = "repo-meta";' +
-    '      const rn = document.createElement("span"); rn.className = "repo-name"; rn.textContent = r.name;' +
-    '      const rs = document.createElement("span"); rs.className = "repo-sub"; rs.textContent = r.sub || "";' +
+    '      const rn = document.createElement("span"); rn.className = "repo-name"; rn.textContent = locRepoName(r);' +
+    '      const rs = document.createElement("span"); rs.className = "repo-sub"; rs.textContent = locRepoSub(r);' +
     '      meta.append(rn, rs);' +
     '      const tog = document.createElement("span"); tog.className = "rtog"; tog.setAttribute("aria-hidden", "true");' +
     '      btn.append(meta, tog);' +
@@ -798,7 +894,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      const foot = document.createElement("div"); foot.className = "repo-foot";' +
     '      const isOpen = openDrawers[code] === r.id;' +
     '      const exp = document.createElement("button"); exp.type = "button"; exp.className = "repo-exp";' +
-    '      exp.textContent = (isOpen ? "Kaynakları Gizle ▲" : (r.count ? ("Kaynaklar (" + r.count + ") ▾") : "Kaynakları Göster ▾"));' +
+    '      exp.textContent = (isOpen ? t("srcHide") : (r.count ? tf("srcCount", { n: r.count }) : t("srcShow")));' +
     '      exp.addEventListener("click", () => { if (openDrawers[code] === r.id) delete openDrawers[code]; else openDrawers[code] = r.id; renderRepoGroups(); });' +
     '      foot.appendChild(exp);' +
     '      wrap.append(btn, foot);' +
@@ -807,7 +903,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    });' +
     '    grp.append(grid, drawerHost); repoGroups.appendChild(grp);' +
     '  });' +
-    '  repoCount.textContent = activeR + " / " + totalR + " depo aktif";' +
+    '  repoCount.textContent = tf("repoCount", { on: activeR, total: totalR });' +
     '}' +
     'function renderHubOrder() {' +
     '  const ls = langOrder.length ? langOrder.slice() : ["tr", "en"];' +
@@ -831,11 +927,11 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      chip.addEventListener("dragover", e => { e.preventDefault(); if (dragFrom >= 0 && dragFrom !== idx) chip.classList.add("is-over"); });' +
     '      chip.addEventListener("dragleave", () => chip.classList.remove("is-over"));' +
     '      chip.addEventListener("drop", e => { e.preventDefault(); chip.classList.remove("is-over"); if (dragFrom >= 0 && dragFrom !== idx) { const arr = ls.slice(); const [mv] = arr.splice(dragFrom, 1); arr.splice(idx, 0, mv); langOrder = arr; dragFrom = -1; renderRepoGroups(); renderHubOrder(); renderPreview(); syncOutputUrl(true); } });' +
-    '      const bL = document.createElement("button"); bL.type = "button"; bL.className = "mv-btn"; bL.textContent = "\u2039"; bL.title = "Sola taşı"; bL.disabled = idx === 0;' +
+    '      const bL = document.createElement("button"); bL.type = "button"; bL.className = "mv-btn"; bL.textContent = "\u2039"; bL.title = t("moveLeft"); bL.disabled = idx === 0;' +
     '      bL.addEventListener("click", () => { if (idx > 0) { const arr = ls.slice(); [arr[idx-1], arr[idx]] = [arr[idx], arr[idx-1]]; langOrder = arr; renderRepoGroups(); renderHubOrder(); renderPreview(); syncOutputUrl(true); } });' +
     '      const num = document.createElement("span"); num.className = "h-num"; num.textContent = (idx + 1) + ".";' +
     '      const lbl = document.createElement("span"); lbl.textContent = code.toUpperCase() + " Hub";' +
-    '      const bR = document.createElement("button"); bR.type = "button"; bR.className = "mv-btn"; bR.textContent = "\u203a"; bR.title = "Sağa taşı"; bR.disabled = idx === ls.length - 1;' +
+    '      const bR = document.createElement("button"); bR.type = "button"; bR.className = "mv-btn"; bR.textContent = "\u203a"; bR.title = t("moveRight"); bR.disabled = idx === ls.length - 1;' +
     '      bR.addEventListener("click", () => { if (idx < ls.length - 1) { const arr = ls.slice(); [arr[idx+1], arr[idx]] = [arr[idx], arr[idx+1]]; langOrder = arr; renderRepoGroups(); renderHubOrder(); renderPreview(); syncOutputUrl(true); } });' +
     '      chip.append(bL, num, lbl, bR);' +
     '      hubOrderList.appendChild(chip);' +
@@ -848,7 +944,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  const dispLangs = orderedLangs(ls, hsort);' +
     '  previewChips.innerHTML = "";' +
     '  if (installMode === "nuvio") {' +
-    '    previewHint.textContent = "Nuvio\'da görünecek hub sırası:";' +
+    '    previewHint.textContent = t("previewNuvio");' +
     '    dispLangs.forEach(code => {' +
     '      const c = document.createElement("span");' +
     '      c.className = "p-chip";' +
@@ -856,7 +952,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '      previewChips.appendChild(c);' +
     '    });' +
     '  } else {' +
-    '    previewHint.textContent = "AIOStreams / Stremio önizlemesi:";' +
+    '    previewHint.textContent = t("previewAio");' +
     '    const c = document.createElement("span"); c.className = "p-chip"; c.textContent = "Stremio (" + dispLangs.map(x => x.toUpperCase()).join("+") + ")"; previewChips.appendChild(c);' +
     '  }' +
     '}' +
@@ -957,23 +1053,24 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'const blUrlInp = document.getElementById("blUrlInp");' +
     'function renderBlacklist(items) {' +
     '  const arr = Array.isArray(items) ? items : [];' +
-    '  blCountEl.textContent = arr.length + " kayıt";' +
+    '  lastBlItems = arr;' +
+    '  blCountEl.textContent = tf("blCount", { n: arr.length });' +
     '  blListEl.innerHTML = "";' +
-    '  if (!arr.length) { const sp = document.createElement("span"); sp.className = "count"; sp.textContent = "Kara listede kayıt yok."; blListEl.appendChild(sp); return; }' +
+    '  if (!arr.length) { const sp = document.createElement("span"); sp.className = "count"; sp.textContent = t("blEmpty"); blListEl.appendChild(sp); return; }' +
     '  arr.forEach(it => {' +
     '    const row = document.createElement("div"); row.className = "bl-item";' +
     '    const meta = document.createElement("div"); meta.className = "bl-meta";' +
     '    const top = document.createElement("div"); top.className = "bl-top";' +
-    '    const prov = document.createElement("span"); prov.className = "bl-prov"; prov.textContent = it.provider || "URL Kaydı";' +
+    '    const prov = document.createElement("span"); prov.className = "bl-prov"; prov.textContent = it.provider || t("blUrlEntry");' +
     '    const tag = document.createElement("span"); const isAuto = String(it.reason || "").startsWith("auto"); tag.className = "bl-tag " + (isAuto ? "is-auto" : "is-man");' +
-    '    tag.textContent = it.reason === "auto_timeout" ? "Oto · Zaman Aşımı" : it.reason === "auto_error" ? "Oto · Hata" : "Manuel";' +
-    '    const mk = document.createElement("span"); mk.className = "bl-tag"; mk.textContent = it.mediaKey === "*" ? "Tüm İçerikler" : (it.mediaLabel || it.mediaKey);' +
+    '    tag.textContent = it.reason === "auto_timeout" ? t("blAutoTimeout") : it.reason === "auto_error" ? t("blAutoError") : t("blManual");' +
+    '    const mk = document.createElement("span"); mk.className = "bl-tag"; mk.textContent = it.mediaKey === "*" ? t("blAllMedia") : (it.mediaLabel || it.mediaKey);' +
     '    top.append(prov, tag, mk);' +
     '    const sub = document.createElement("div"); sub.className = "bl-sub";' +
-    '    const dt = it.createdAt ? new Date(it.createdAt).toLocaleString("tr-TR") : "";' +
+    '    const dt = it.createdAt ? new Date(it.createdAt).toLocaleString(activeLocale()) : "";' +
     '    sub.textContent = [it.url || "", dt].filter(Boolean).join(" · ");' +
     '    meta.append(top, sub);' +
-    '    const del = document.createElement("button"); del.type = "button"; del.className = "bl-del"; del.textContent = "Kaldır";' +
+    '    const del = document.createElement("button"); del.type = "button"; del.className = "bl-del"; del.textContent = t("remove");' +
     '    del.addEventListener("click", async () => {' +
     '      if (del.disabled) return;' +
     '      del.disabled = true;' +
@@ -982,21 +1079,21 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '        if (!r.ok) throw new Error("HTTP " + r.status);' +
     '        const j = await r.json();' +
     '        renderBlacklist(j.items);' +
-    '      } catch { del.disabled = false; setStatus("Kara listeden kaldırma hatası", 3500, true); }' +
+    '      } catch { del.disabled = false; setStatus(t("blRemoveErr"), 3500, true); }' +
     '    });' +
     '    row.append(meta, del); blListEl.appendChild(row);' +
     '  });' +
     '}' +
-    'async function loadBlacklistUi() { try { const r = await fetch(ORIGIN + "/api/blacklist"); if (!r.ok) throw new Error("HTTP " + r.status); const j = await r.json(); renderBlacklist(j.items); } catch { blListEl.innerHTML = ""; const sp = document.createElement("span"); sp.className = "count"; sp.textContent = "Kara liste okunamadı."; blListEl.appendChild(sp); } }' +
+    'async function loadBlacklistUi() { try { const r = await fetch(ORIGIN + "/api/blacklist"); if (!r.ok) throw new Error("HTTP " + r.status); const j = await r.json(); renderBlacklist(j.items); } catch { lastBlItems = null; blListEl.innerHTML = ""; const sp = document.createElement("span"); sp.className = "count"; sp.textContent = t("blReadErr"); blListEl.appendChild(sp); } }' +
     'document.getElementById("blRefreshBtn").addEventListener("click", loadBlacklistUi);' +
     'document.getElementById("blClearBtn").addEventListener("click", async () => {' +
-    '  if (!confirm("Tüm kara liste kayıtları silinsin mi?")) return;' +
+    '  if (!confirm(t("blClearConfirm"))) return;' +
     '  try {' +
     '    const r = await fetch(ORIGIN + "/api/blacklist/clear", { method: "POST" });' +
     '    if (!r.ok) throw new Error("HTTP " + r.status);' +
     '    const j = await r.json();' +
     '    renderBlacklist(j.items);' +
-    '  } catch { setStatus("Kara liste temizleme hatası", 3500, true); }' +
+    '  } catch { setStatus(t("blClearErr"), 3500, true); }' +
     '});' +
     'document.getElementById("blAddBtn").addEventListener("click", async () => {' +
     '  const provider = blProvInp.value.trim(); const url = blUrlInp.value.trim(); const mediaKey = blMediaInp.value.trim() || "*";' +
@@ -1007,7 +1104,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    const j = await r.json();' +
     '    renderBlacklist(j.items);' +
     '    blMediaInp.value = ""; blProvInp.value = ""; blUrlInp.value = "";' +
-    '  } catch { setStatus("Kara listeye ekleme hatası", 3500, true); }' +
+    '  } catch { setStatus(t("blAddErr"), 3500, true); }' +
     '});' +
     'document.getElementById("qAll").addEventListener("click", () => { qInputs.forEach(i => i.checked = true); syncControlStates(); syncOutputUrl(true); });' +
     'document.getElementById("qNo4k").addEventListener("click", () => { qInputs.forEach(i => i.checked = (i.value !== "2160p")); syncControlStates(); syncOutputUrl(true); });' +
@@ -1025,10 +1122,10 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'async function saveToServer(silent) {' +
     '  try {' +
     '    const res = await fetch(ORIGIN + "/api/save-config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cfg: lastCfgStr }) });' +
-    '    if (res.ok && !silent) setStatus("Kaydedildi · Nuvio\'da ↻ Yenile\'ye bas", 3500, false);' +
-    '    else if (!res.ok && !silent) setStatus("Kaydetme hatası", 3500, true);' +
+    '    if (res.ok && !silent) setStatus(t("stSaved"), 3500, false);' +
+    '    else if (!res.ok && !silent) setStatus(t("stSaveErr"), 3500, true);' +
     '    return res.ok;' +
-    '  } catch { if (!silent) setStatus("Kaydetme hatası", 3500, true); return false; }' +
+    '  } catch { if (!silent) setStatus(t("stSaveErr"), 3500, true); return false; }' +
     '}' +
     'document.getElementById("saveBtn").addEventListener("click", () => saveToServer(false));' +
     'sbtn.addEventListener("click", async (e) => {' +
@@ -1052,15 +1149,17 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'document.getElementById("reposAllOff").addEventListener("click", () => { const ls = langOrder.length ? langOrder : ["tr", "en"]; ls.forEach(c => (REPOS_BY_LANG[c] || []).forEach(r => disabledRepos.add(r.id))); renderRepoGroups(); syncOutputUrl(true); });' +
     'document.getElementById("copyBtn").addEventListener("click", async () => {' +
     '  if (linkMode === "saved") await saveToServer(true);' +
-    '  try { await navigator.clipboard.writeText(out.textContent); setStatus(linkMode === "saved" ? "Kaydedildi ve kopyalandı" : "Kopyalandı", 2500, false); }' +
-    '  catch { setStatus("Linki seçip kopyala", 3000, false); }' +
+    '  try { await navigator.clipboard.writeText(out.textContent); setStatus(linkMode === "saved" ? t("stSavedCopied") : t("stCopied"), 2500, false); }' +
+    '  catch { setStatus(t("stSelectCopy"), 3000, false); }' +
     '});' +
+    'if (uiLangSel) uiLangSel.addEventListener("change", () => { applyUiLang(uiLangSel.value, true); saveUiPrefs(); });' +
     'try {' +
     '  const uiRaw = localStorage.getItem(UI_PREFS_KEY);' +
     '  const uiSrc = uiRaw ? JSON.parse(uiRaw) : JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");' +
     '  if (uiSrc && typeof uiSrc === "object") {' +
     '    if (uiSrc.installMode === "nuvio" || uiSrc.installMode === "aio") { installMode = uiSrc.installMode; document.querySelectorAll(".seg button[data-install]").forEach(x => x.classList.toggle("is-active", x.dataset.install === installMode)); }' +
     '    if (uiSrc.linkMode === "saved" || uiSrc.linkMode === "inline") { linkMode = uiSrc.linkMode; document.querySelectorAll(".seg button[data-linkmode]").forEach(x => x.classList.toggle("is-active", x.dataset.linkmode === linkMode)); }' +
+    '    if (typeof uiSrc.uiLang === "string") uiLangPref = uiSrc.uiLang;' +
     '  }' +
     '} catch {}' +
     'if (!HAS_URL_CFG) {' +
@@ -1085,6 +1184,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    }' +
     '  } catch {}' +
     '}' +
+    'applyUiLang(uiLangPref, false);' +
     'renderAll(false);' +
     'loadBlacklistUi();' +
     '</script></body></html>';
