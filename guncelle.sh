@@ -222,7 +222,10 @@ if [ "$CUR_VER" != "0.0.0" ]; then TARGET_VER="$CUR_VER"; fi
 if [ "$NO_RESTART" -eq 0 ]; then
   say "[5/5] Servisler yeniden baslatiliyor..."
   write_status true "restart" 90 "Restarting services..." false ""
-  if [ "$FROM_UI" -eq 1 ]; then sleep 0.5; fi
+  if [ "$FROM_UI" -eq 1 ]; then
+    sleep 0.5
+    unset PORT MEGA_PORT
+  fi
   if [ -x "$ROOT/stop.sh" ] && [ -x "$ROOT/start.sh" ]; then
     "$ROOT/stop.sh" >/dev/null 2>&1 || true
     sleep 1

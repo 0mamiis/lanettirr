@@ -292,6 +292,10 @@ try {
             Start-Sleep -Milliseconds 800
         }
         if (Test-Path -LiteralPath $startScript) {
+            if ($FromUi) {
+                Remove-Item Env:PORT -ErrorAction SilentlyContinue
+                Remove-Item Env:MEGA_PORT -ErrorAction SilentlyContinue
+            }
             & $startScript | Out-Null
         }
         $megaPort = Resolve-MegaPort

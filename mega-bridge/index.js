@@ -4371,7 +4371,10 @@ function startSelfUpdate(targetVersion) {
     if (cleanTarget) args.push("--target-version", cleanTarget);
   }
   try {
-    const child = spawn(cmd, args, { cwd: upd.rootDir, detached: true, stdio: "ignore", windowsHide: true });
+    const childEnv = Object.assign({}, process.env);
+    delete childEnv.PORT;
+    delete childEnv.MEGA_PORT;
+    const child = spawn(cmd, args, { cwd: upd.rootDir, env: childEnv, detached: true, stdio: "ignore", windowsHide: true });
     child.on("error", (err) => {
       try {
         writeUpdateStatusFile(Object.assign({}, initStatus, { running: false, stage: "error", error: String(err && err.message ? err.message : err), updatedAt: new Date().toISOString() }));

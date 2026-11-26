@@ -1,6 +1,6 @@
 {
   "name": "lanettirr",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Lanettirr self-hosted VOD bridge for Nuvio, CloudStream (CS3), and Stremio",
   "main": "index.js",
   "engines": {
