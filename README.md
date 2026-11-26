@@ -47,7 +47,7 @@ This single command automatically:
 - Creates 1-tap **Termux:Widget** home-screen shortcuts (`Lanettirr-Start`, `Lanettirr-Stop`, `Lanettirr-Config`, `Lanettirr-Update`) and CLI commands (`lanettirr-start`, `lanettirr-stop`, `lanettirr-config`, `lanettirr-update`).
 - Starts all services on `127.0.0.1:3001` so you can add the local URLs directly in **Nuvio**, **CloudStream (CS3)**, or **Stremio** on the same phone.
 
-## Nuvio Desktop Setup
+## Client Setup (Nuvio, CloudStream & Stremio)
 
 ### 1. Configuration Panel (Recommended First Step)
 
@@ -89,9 +89,9 @@ Lanettirr includes a native self-hosted CloudStream 3 repository that dynamicall
 
 ## Daily Usage
 
-- **Start**: `baslat.bat`
-- **Stop**: `durdur.bat`
-- **Update**: Click the one-click **Update** button in the top bar of the web configuration panel (`http://127.0.0.1:3001/configure`), or run `guncelle.bat` (Windows) / `./guncelle.sh` (Linux/Termux). Your user data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates.
+- **Start**: `baslat.bat` (Windows) / `./start.sh` or `lanettirr-start` (Linux/Termux)
+- **Stop**: `durdur.bat` (Windows) / `./stop.sh` or `lanettirr-stop` (Linux/Termux)
+- **Update**: Click the one-click **Update** button in the top bar of the web configuration panel (`http://127.0.0.1:3001/configure`), or run `guncelle.bat` (Windows) / `./guncelle.sh` or `lanettirr-update` (Linux/Termux). Your user data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates.
 - **Health check**: `http://127.0.0.1:3001/health`
 - **Auto-start on Windows boot**: Create a shortcut to `scripts/start-hidden.vbs` inside your Windows Startup folder (`shell:startup`) to launch the services silently in the background at login.
 
