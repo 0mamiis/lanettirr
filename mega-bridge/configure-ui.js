@@ -177,7 +177,8 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.45;overflow-x:hidden;-webkit-text-size-adjust:100%}' +
     'button,label,select,input,a{touch-action:manipulation}' +
     '.shell{max-width:840px;margin:0 auto;padding:36px 20px 64px}' +
-    '.hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:20px;margin-bottom:24px;border-bottom:1px solid var(--border)}' +
+    '.hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:22px;border-bottom:1px solid var(--border)}' +
+    '.hdr-right{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;min-width:0}' +
     '.ui-lang-wrap{display:inline-flex;align-items:center;gap:8px}' +
     '.ui-lang-lbl{font-size:12px;color:var(--fg-muted);white-space:nowrap}' +
     '.ui-lang-sel{height:32px;padding:0 10px;font-size:12px;font-family:inherit;color:var(--fg);background:var(--surface-2);border:1px solid var(--border-strong);cursor:pointer;outline:none;max-width:220px}' +
@@ -187,12 +188,12 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.brand-mark{width:10px;height:10px;background:var(--primary);display:inline-block}' +
     'h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em}' +
     '.ver-pill{font-size:11px;font-weight:500;color:var(--fg-muted);background:var(--surface-2);border:1px solid var(--border);padding:2px 7px;font-variant-numeric:tabular-nums}' +
-    '.upd-bar{background:var(--surface);border:1px solid var(--border);padding:10px 16px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;transition:border-color .15s}' +
+    '.upd-bar{background:var(--surface);border:1px solid var(--border);padding:4px 10px;min-height:32px;display:flex;flex-direction:column;justify-content:center;gap:5px;transition:border-color .15s;max-width:100%}' +
     '.upd-bar.is-avail,.upd-bar.is-busy{border-inline-start:3px solid var(--primary)}' +
     '.upd-bar.is-done{border-inline-start:3px solid var(--ok)}' +
     '.upd-bar.is-err{border-inline-start:3px solid #f31260}' +
     '.upd-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}' +
-    '.upd-left{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--fg)}' +
+    '.upd-left{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;color:var(--fg)}' +
     '.upd-dot{width:7px;height:7px;background:var(--fg-muted);flex-shrink:0}' +
     '.upd-bar.is-ok .upd-dot,.upd-bar.is-done .upd-dot{background:var(--ok)}' +
     '.upd-bar.is-avail .upd-dot,.upd-bar.is-busy .upd-dot{background:var(--primary)}' +
@@ -201,13 +202,13 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.upd-act{display:flex;align-items:center;gap:10px;flex-shrink:0}' +
     '.upd-pct{font-size:12px;font-weight:600;color:var(--primary);font-variant-numeric:tabular-nums}' +
     '.upd-bar.is-done .upd-pct{color:var(--ok)}' +
-    '.upd-btn{height:28px;padding:0 12px;font-size:12px;font-weight:500;font-family:inherit;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:background .12s,border-color .12s}' +
+    '.upd-btn{height:24px;padding:0 10px;font-size:11.5px;font-weight:500;font-family:inherit;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:background .12s,border-color .12s}' +
     '.upd-btn-primary{background:var(--primary);color:var(--primary-fg)}' +
     '.upd-btn-primary:hover{background:var(--primary-hover)}' +
     '.upd-btn-primary:disabled{opacity:.55;cursor:default}' +
     '.upd-btn-ghost{background:var(--surface-2);color:var(--fg);border-color:var(--border-strong)}' +
     '.upd-btn-ghost:hover{background:var(--surface-hover)}' +
-    '.upd-track{width:100%;height:6px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;position:relative}' +
+    '.upd-track{width:100%;height:4px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;position:relative}' +
     '.upd-fill{height:100%;width:0%;background:var(--primary);transition:width .35s ease}' +
     '.upd-bar.is-done .upd-fill{background:var(--ok)}' +
     '.upd-bar.is-err .upd-fill{background:#f31260}' +
@@ -406,9 +407,10 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '@media (max-width:640px){' +
       '.shell{padding:14px 12px 44px}' +
       '.hdr{flex-direction:column;align-items:stretch;gap:12px;padding-bottom:14px;margin-bottom:16px}' +
+      '.hdr-right{width:100%;flex-direction:column;align-items:stretch;gap:8px}' +
       '.ui-lang-wrap{width:100%;justify-content:space-between}' +
       '.ui-lang-sel{flex:1;max-width:none;height:40px;font-size:16px}' +
-      '.upd-bar{padding:10px 12px;margin-bottom:12px}' +
+      '.upd-bar{padding:8px 12px;width:100%}' +
       '.upd-top{flex-direction:column;align-items:stretch;gap:8px}' +
       '.upd-msg{white-space:normal;line-height:1.35}' +
       '.upd-act{width:100%;flex-wrap:wrap;gap:8px}' +
@@ -466,24 +468,26 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
       '<div class="brand">' +
         '<div class="brand-row"><span class="brand-mark"></span><h1>Lanettirr</h1><span class="ver-pill" id="verPill">v' + esc(appVersion) + '</span></div>' +
       '</div>' +
-      '<label class="ui-lang-wrap">' +
-        '<span class="ui-lang-lbl" data-i18n="uiLangLabel">' + esc(tr('uiLangLabel')) + '</span>' +
-        '<select class="ui-lang-sel" id="uiLangSel" data-i18n-aria="uiLangLabel" aria-label="' + esc(tr('uiLangLabel')) + '">' + uiLangOptions + '</select>' +
-      '</label>' +
-    '</header>' +
-    '<div class="upd-bar" id="updBar">' +
-      '<div class="upd-top">' +
-        '<div class="upd-left"><span class="upd-dot"></span><span class="upd-msg" id="updMsg">' + esc(tr('updChecking')) + '</span></div>' +
-        '<div class="upd-act">' +
-          '<span class="upd-pct hidden" id="updPct">0%</span>' +
-          '<button type="button" class="link-btn hidden" id="updCheckBtn" data-i18n="updCheckBtn">' + esc(tr('updCheckBtn')) + '</button>' +
-          '<button type="button" class="upd-btn upd-btn-primary hidden" id="updNowBtn" data-i18n="updNowBtn">' + esc(tr('updNowBtn')) + '</button>' +
-          '<a class="upd-btn upd-btn-ghost hidden" id="updManualBtn" href="https://github.com/0mamiis/lanettirr" target="_blank" rel="noopener" data-i18n="updManualBtn">' + esc(tr('updManualBtn')) + '</a>' +
-          '<button type="button" class="upd-btn upd-btn-ghost hidden" id="updReloadBtn" data-i18n="updReloadBtn">' + esc(tr('updReloadBtn')) + '</button>' +
+      '<div class="hdr-right">' +
+        '<div class="upd-bar" id="updBar">' +
+          '<div class="upd-top">' +
+            '<div class="upd-left"><span class="upd-dot"></span><span class="upd-msg" id="updMsg">' + esc(tr('updChecking')) + '</span></div>' +
+            '<div class="upd-act">' +
+              '<span class="upd-pct hidden" id="updPct">0%</span>' +
+              '<button type="button" class="link-btn hidden" id="updCheckBtn" data-i18n="updCheckBtn">' + esc(tr('updCheckBtn')) + '</button>' +
+              '<button type="button" class="upd-btn upd-btn-primary hidden" id="updNowBtn" data-i18n="updNowBtn">' + esc(tr('updNowBtn')) + '</button>' +
+              '<a class="upd-btn upd-btn-ghost hidden" id="updManualBtn" href="https://github.com/0mamiis/lanettirr" target="_blank" rel="noopener" data-i18n="updManualBtn">' + esc(tr('updManualBtn')) + '</a>' +
+              '<button type="button" class="upd-btn upd-btn-ghost hidden" id="updReloadBtn" data-i18n="updReloadBtn">' + esc(tr('updReloadBtn')) + '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="upd-track hidden" id="updTrack"><div class="upd-fill" id="updFill"></div></div>' +
         '</div>' +
+        '<label class="ui-lang-wrap">' +
+          '<span class="ui-lang-lbl" data-i18n="uiLangLabel">' + esc(tr('uiLangLabel')) + '</span>' +
+          '<select class="ui-lang-sel" id="uiLangSel" data-i18n-aria="uiLangLabel" aria-label="' + esc(tr('uiLangLabel')) + '">' + uiLangOptions + '</select>' +
+        '</label>' +
       '</div>' +
-      '<div class="upd-track hidden" id="updTrack"><div class="upd-fill" id="updFill"></div></div>' +
-    '</div>' +
+    '</header>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
         '<span class="panel-title" data-i18n="secLangs">' + esc(tr('secLangs')) + '</span>' +
