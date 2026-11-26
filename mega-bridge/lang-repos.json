@@ -1,0 +1,990 @@
+{
+  "tr": {
+    "code": "tr",
+    "name": "Türkçe",
+    "native": "Türkçe",
+    "flag": "🇹🇷",
+    "kind": "trhub",
+    "note": "TR Hub (173 CS3 + 20 Nuvio TR deposu, torrent yok)"
+  },
+  "en": {
+    "code": "en",
+    "name": "İngilizce",
+    "native": "English",
+    "flag": "🇬🇧",
+    "kind": "enhub",
+    "note": "EN Hub (154 kaynak, 10 EN depo, torrent yok)",
+    "cs3Repos": [
+      {
+        "name": "Phisher CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      },
+      {
+        "name": "AdmKnight CS3",
+        "url": "https://raw.githubusercontent.com/admknight/CloudstreamExtensions/builds/repo.json"
+      }
+    ]
+  },
+  "en_us": {
+    "code": "en_us",
+    "name": "İngilizce (ABD)",
+    "native": "English (US)",
+    "flag": "🇺🇸",
+    "kind": "nuvio",
+    "baseLang": "en",
+    "repos": [
+      {
+        "name": "All-in-One Nuvio",
+        "url": "https://raw.githubusercontent.com/NuvioPlugin/All-in-One-Nuvio/main/manifest.json"
+      },
+      {
+        "name": "Wiojelt Addons",
+        "url": "https://raw.githubusercontent.com/Wiojelt/Nuvio-Addons/main/manifest.json"
+      },
+      {
+        "name": "Direct Streams EN",
+        "url": "https://raw.githubusercontent.com/phuanh004/direct-streams-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "en_uk": {
+    "code": "en_uk",
+    "name": "İngilizce (BK)",
+    "native": "English (UK)",
+    "flag": "🇬🇧",
+    "kind": "nuvio",
+    "baseLang": "en",
+    "repos": [
+      {
+        "name": "All-in-One Nuvio",
+        "url": "https://raw.githubusercontent.com/NuvioPlugin/All-in-One-Nuvio/main/manifest.json"
+      },
+      {
+        "name": "Direct Streams EN",
+        "url": "https://raw.githubusercontent.com/phuanh004/direct-streams-providers/main/manifest.json"
+      },
+      {
+        "name": "Vixeo Providers",
+        "url": "https://raw.githubusercontent.com/davybrieu/vixeo-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "es": {
+    "code": "es",
+    "name": "İspanyolca",
+    "native": "Español",
+    "flag": "🇪🇸",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Nuvio ES",
+        "url": "https://raw.githubusercontent.com/rualesjer-netizen/Nuvio-plugin-es/main/manifest.json"
+      },
+      {
+        "name": "Nuvio Official ES",
+        "url": "https://raw.githubusercontent.com/Fgarrido98/nuvio-official-plugins/main/manifest.json"
+      },
+      {
+        "name": "NuvioLatam",
+        "url": "https://raw.githubusercontent.com/ticolibre/NuvioLatam/main/manifest.json"
+      },
+      {
+        "name": "Latino Custom",
+        "url": "https://raw.githubusercontent.com/cigna26/nuvio-custom-latino-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CS3 Multilingual ES",
+        "url": "https://raw.githubusercontent.com/mehmet0303-g/cloudstream-extensions-multilingual/builds/plugins.json"
+      },
+      {
+        "name": "Harley ES CS3",
+        "url": "https://raw.githubusercontent.com/harley654321/cloudstream-extensiones/main/repo.json"
+      }
+    ]
+  },
+  "es_es": {
+    "code": "es_es",
+    "name": "İspanyolca (İspanya)",
+    "native": "Español (España)",
+    "flag": "🇪🇸",
+    "kind": "nuvio",
+    "baseLang": "es",
+    "repos": [
+      {
+        "name": "Nuvio ES",
+        "url": "https://raw.githubusercontent.com/rualesjer-netizen/Nuvio-plugin-es/main/manifest.json"
+      },
+      {
+        "name": "Nuvio Official ES",
+        "url": "https://raw.githubusercontent.com/Fgarrido98/nuvio-official-plugins/main/manifest.json"
+      },
+      {
+        "name": "EstrenosCinesaa ES",
+        "url": "https://raw.githubusercontent.com/muxoalfonso/Nuvio-Providers-Personalizado/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Harley ES CS3",
+        "url": "https://raw.githubusercontent.com/harley654321/cloudstream-extensiones/main/repo.json"
+      }
+    ]
+  },
+  "es_la": {
+    "code": "es_la",
+    "name": "İspanyolca (Latino)",
+    "native": "Español (Latam)",
+    "flag": "🇲🇽",
+    "kind": "nuvio",
+    "baseLang": "es",
+    "repos": [
+      {
+        "name": "NuvioLatam",
+        "url": "https://raw.githubusercontent.com/ticolibre/NuvioLatam/main/manifest.json"
+      },
+      {
+        "name": "LatiNuvio V2",
+        "url": "https://raw.githubusercontent.com/latinokodi/latinuvio-V2/main/manifest.json"
+      },
+      {
+        "name": "Providers Latino",
+        "url": "https://raw.githubusercontent.com/MauroDanielCaruso/Nuvio-Providers-Latino/main/manifest.json"
+      },
+      {
+        "name": "Latino Custom",
+        "url": "https://raw.githubusercontent.com/cigna26/nuvio-custom-latino-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Extensionahi MX CS3",
+        "url": "https://raw.githubusercontent.com/Nahiro18/extensionahi/main/repo.json"
+      },
+      {
+        "name": "CloudStream Latino CS3",
+        "url": "https://raw.githubusercontent.com/Menorah/CloudStream-Latino/main/repo.json"
+      }
+    ]
+  },
+  "pt": {
+    "code": "pt",
+    "name": "Portekizce",
+    "native": "Português",
+    "flag": "🇵🇹",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Ivadz PT",
+        "url": "https://raw.githubusercontent.com/Ivadzf/ivadz-nuvio-repo/main/manifest.json"
+      },
+      {
+        "name": "PT-BR Fontes",
+        "url": "https://raw.githubusercontent.com/nathanael540/nuvio-fontes-ptbr-plugin/main/manifest.json"
+      },
+      {
+        "name": "Saimuel PT",
+        "url": "https://raw.githubusercontent.com/saimuelbr/saimuel-nuvio-repo/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Hexated PT-PT CS3",
+        "url": "https://raw.githubusercontent.com/hexated/cloudstream-extensions-hexated/builds/plugins.json"
+      }
+    ]
+  },
+  "pt_br": {
+    "code": "pt_br",
+    "name": "Portekizce (Brezilya)",
+    "native": "Português (Brasil)",
+    "flag": "🇧🇷",
+    "kind": "nuvio",
+    "baseLang": "pt",
+    "repos": [
+      {
+        "name": "Ivadz PT-BR",
+        "url": "https://raw.githubusercontent.com/Ivadzf/ivadz-nuvio-repo/main/manifest.json"
+      },
+      {
+        "name": "PT-BR Fontes",
+        "url": "https://raw.githubusercontent.com/nathanael540/nuvio-fontes-ptbr-plugin/main/manifest.json"
+      },
+      {
+        "name": "Kamirama PT-BR",
+        "url": "https://raw.githubusercontent.com/kaminarizz/Kamirama-Plugin/main/manifest.json"
+      },
+      {
+        "name": "Saimuel PT-BR",
+        "url": "https://raw.githubusercontent.com/saimuelbr/saimuel-nuvio-repo/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CS Gate PT-BR",
+        "url": "https://raw.githubusercontent.com/adsverify9954/cs-gate-extension/builds/plugins.json"
+      }
+    ]
+  },
+  "fr": {
+    "code": "fr",
+    "name": "Fransızca",
+    "native": "Français (VF)",
+    "flag": "🇫🇷",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Gowaru FR",
+        "url": "https://raw.githubusercontent.com/Gowaru/gowaru-nuvio-providers/main/manifest.json"
+      },
+      {
+        "name": "FrenchPlugin",
+        "url": "https://raw.githubusercontent.com/SatanMerde/TheFrenchPluginNuvio/main/manifest.json"
+      },
+      {
+        "name": "NiakVIO FR",
+        "url": "https://raw.githubusercontent.com/niakw/NiakVIO/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "GramFlix FR CS3",
+        "url": "https://raw.githubusercontent.com/tOntOnbOuLii/GramFlix/main/repo.json"
+      },
+      {
+        "name": "FrenchRepo CS3",
+        "url": "https://raw.githubusercontent.com/mouradchaouche/cloudstream-frenchrepo/main/repo.json"
+      }
+    ]
+  },
+  "fr_ca": {
+    "code": "fr_ca",
+    "name": "Fransızca (Kanada)",
+    "native": "Français (Canada)",
+    "flag": "🇨🇦",
+    "kind": "nuvio",
+    "baseLang": "fr",
+    "repos": [
+      {
+        "name": "Gowaru FR",
+        "url": "https://raw.githubusercontent.com/Gowaru/gowaru-nuvio-providers/main/manifest.json"
+      },
+      {
+        "name": "FrenchPlugin",
+        "url": "https://raw.githubusercontent.com/SatanMerde/TheFrenchPluginNuvio/main/manifest.json"
+      }
+    ]
+  },
+  "de": {
+    "code": "de",
+    "name": "Almanca",
+    "native": "Deutsch",
+    "flag": "🇩🇪",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "German Providers",
+        "url": "https://raw.githubusercontent.com/Tarx2000/NuvioGermanProviders/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Bnyro German CS3",
+        "url": "https://raw.githubusercontent.com/Bnyro/GermanProviders/master/repo.json"
+      },
+      {
+        "name": "DCEnhance DE CS3",
+        "url": "https://raw.githubusercontent.com/dcenhance/dcext/main/repo.json"
+      }
+    ]
+  },
+  "it": {
+    "code": "it",
+    "name": "İtalyanca",
+    "native": "Italiano",
+    "flag": "🇮🇹",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "MovyITA / CB01",
+        "url": "https://raw.githubusercontent.com/qwertyuiop8899/prisynx_cs3/main/manifest.json"
+      },
+      {
+        "name": "EasyStreams IT",
+        "url": "https://raw.githubusercontent.com/sherlockholmesb512-source/easystreams/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "ItaliaInStreaming CS3",
+        "url": "https://raw.githubusercontent.com/Foxu89/ItaliaInStreaming/builds/plugins.json"
+      },
+      {
+        "name": "doGiors IT CS3",
+        "url": "https://raw.githubusercontent.com/doGior/doGiorsHadEnough/builds/plugins.json"
+      }
+    ]
+  },
+  "ar": {
+    "code": "ar",
+    "name": "Arapça",
+    "native": "العربية",
+    "flag": "🇸🇦",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Arabic Nuvio",
+        "url": "https://raw.githubusercontent.com/SafaaSalam/Arabic-Nuvio/main/manifest.json"
+      },
+      {
+        "name": "Re-3arabi Nuvio",
+        "url": "https://raw.githubusercontent.com/Zer0cipher/Re-3arabi-Addon-Nuvio-Fork/main/manifest.json"
+      },
+      {
+        "name": "Arabic Cinema Hub",
+        "url": "https://raw.githubusercontent.com/7aledomar-dotcom/arabic-cinema-hub/main/manifest.json"
+      },
+      {
+        "name": "3arabi Providers",
+        "url": "https://raw.githubusercontent.com/mosa321211/my-nuvio-providers/main/manifest.json"
+      },
+      {
+        "name": "Arabic CinemaBox",
+        "url": "https://raw.githubusercontent.com/mo7AmMeD64/nuvio-plugins/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Re-3arabi CS3",
+        "url": "https://raw.githubusercontent.com/Abodabodd/re-3arabi/refs/heads/main/repo"
+      },
+      {
+        "name": "CS-AR CS3",
+        "url": "https://raw.githubusercontent.com/mo7AmMeD64/cs-ar/main/repo/repo.json"
+      }
+    ]
+  },
+  "ru": {
+    "code": "ru",
+    "name": "Rusça",
+    "native": "Русский",
+    "flag": "🇷🇺",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Russian Cinema",
+        "url": "https://raw.githubusercontent.com/kratoskrator/russian-cinema-nuvio/main/manifest.json"
+      },
+      {
+        "name": "RU Dub Studios",
+        "url": "https://raw.githubusercontent.com/gdfgdaj6terwe/lp-test/main/manifest.json"
+      },
+      {
+        "name": "HDRezka RU/UK",
+        "url": "https://raw.githubusercontent.com/andreygerrard777/nuvio-uk-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Hexated RU CS3",
+        "url": "https://raw.githubusercontent.com/ethansieg/recloudstream-cloudstream-extensions-hexated/builds/repo.json"
+      }
+    ]
+  },
+  "uk": {
+    "code": "uk",
+    "name": "Ukraynaca",
+    "native": "Українська",
+    "flag": "🇺🇦",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Nuvio UK",
+        "url": "https://raw.githubusercontent.com/n0white/nuvio-uk-providers/main/manifest.json"
+      },
+      {
+        "name": "UAFlix / Uakino",
+        "url": "https://raw.githubusercontent.com/andreygerrard777/nuvio-uk-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CakesTwix UK CS3",
+        "url": "https://raw.githubusercontent.com/CakesTwix/cloudstream-extensions-uk/master/repo.json"
+      }
+    ]
+  },
+  "pl": {
+    "code": "pl",
+    "name": "Lehçe",
+    "native": "Polski",
+    "flag": "🇵🇱",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "CinemaCity PL",
+        "url": "https://raw.githubusercontent.com/vinaytiwari-rk/VN-REPO/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher PL CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "hu": {
+    "code": "hu",
+    "name": "Macarca",
+    "native": "Magyar",
+    "flag": "🇭🇺",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Magyar Nuvio",
+        "url": "https://raw.githubusercontent.com/Player798xy/nuvio-magyar-plugin/main/manifest.json"
+      }
+    ]
+  },
+  "ro": {
+    "code": "ro",
+    "name": "Romence",
+    "native": "Română",
+    "flag": "🇷🇴",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "RoDubbed Nuvio",
+        "url": "https://raw.githubusercontent.com/MrDany14/Nuvio-RoDubbed-TV-Test/main/manifest.json"
+      }
+    ]
+  },
+  "cs": {
+    "code": "cs",
+    "name": "Çekçe",
+    "native": "Čeština",
+    "flag": "🇨🇿",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + çapraz ses eşleşmesi"
+  },
+  "nl": {
+    "code": "nl",
+    "name": "Felemenkçe",
+    "native": "Nederlands",
+    "flag": "🇳🇱",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + çapraz ses eşleşmesi"
+  },
+  "sv": {
+    "code": "sv",
+    "name": "İsveççe",
+    "native": "Svenska",
+    "flag": "🇸🇪",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + çapraz ses eşleşmesi"
+  },
+  "no": {
+    "code": "no",
+    "name": "Norveççe",
+    "native": "Norsk",
+    "flag": "🇳🇴",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + çapraz ses eşleşmesi"
+  },
+  "da": {
+    "code": "da",
+    "name": "Danca",
+    "native": "Dansk",
+    "flag": "🇩🇰",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + CS3 North(da)",
+    "cs3Repos": [
+      {
+        "name": "North DA CS3",
+        "url": "https://raw.githubusercontent.com/sealinwater/north/main/repo.json"
+      }
+    ]
+  },
+  "fi": {
+    "code": "fi",
+    "name": "Fince",
+    "native": "Suomi",
+    "flag": "🇫🇮",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + çapraz ses eşleşmesi"
+  },
+  "el": {
+    "code": "el",
+    "name": "Yunanca",
+    "native": "Ελληνικά",
+    "flag": "🇬🇷",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + çapraz ses eşleşmesi"
+  },
+  "fa": {
+    "code": "fa",
+    "name": "Farsça",
+    "native": "فارسی",
+    "flag": "🇮🇷",
+    "kind": "enhub_subset",
+    "note": "PersianStremio (EN Hub içinde)"
+  },
+  "hi": {
+    "code": "hi",
+    "name": "Hintçe",
+    "native": "हिन्दी (Hindi)",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Hindi Multi-Audio",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      },
+      {
+        "name": "Hindi Nuvio",
+        "url": "https://raw.githubusercontent.com/D3adlyRocket/Hindi-Nuvio/main/manifest.json"
+      },
+      {
+        "name": "VN Hindi",
+        "url": "https://raw.githubusercontent.com/vinaytiwari-rk/VN-REPO/main/manifest.json"
+      },
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher HI CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      },
+      {
+        "name": "MrXtron HI CS3",
+        "url": "https://raw.githubusercontent.com/MrXtron/CloudStream-Extension/builds/repo.json"
+      }
+    ]
+  },
+  "ta": {
+    "code": "ta",
+    "name": "Tamilce",
+    "native": "தமிழ் (Tamil)",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      },
+      {
+        "name": "Tamil Multi-Audio",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      },
+      {
+        "name": "VN South India",
+        "url": "https://raw.githubusercontent.com/vinaytiwari-rk/VN-REPO/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher TA CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "te": {
+    "code": "te",
+    "name": "Teluguca",
+    "native": "తెలుగు (Telugu)",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      },
+      {
+        "name": "Telugu Multi-Audio",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      },
+      {
+        "name": "VN South India",
+        "url": "https://raw.githubusercontent.com/vinaytiwari-rk/VN-REPO/main/manifest.json"
+      },
+      {
+        "name": "Telugu Toons",
+        "url": "https://raw.githubusercontent.com/smartcrush606-source/Telugu-toons-nuvio/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher TE CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "ml": {
+    "code": "ml",
+    "name": "Malayalamca",
+    "native": "മലയാളം",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      },
+      {
+        "name": "VN Malayalam",
+        "url": "https://raw.githubusercontent.com/vinaytiwari-rk/VN-REPO/main/manifest.json"
+      },
+      {
+        "name": "TJ Multi-Audio",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      }
+    ]
+  },
+  "kn": {
+    "code": "kn",
+    "name": "Kannada",
+    "native": "ಕನ್ನಡ",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      },
+      {
+        "name": "VN South India",
+        "url": "https://raw.githubusercontent.com/vinaytiwari-rk/VN-REPO/main/manifest.json"
+      }
+    ]
+  },
+  "bn": {
+    "code": "bn",
+    "name": "Bengalce",
+    "native": "বাংলা",
+    "flag": "🇧🇩",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      },
+      {
+        "name": "BDIX Nuvio",
+        "url": "https://raw.githubusercontent.com/Riaz-404/nuvio-bdix-plugin/main/manifest.json"
+      },
+      {
+        "name": "BDIX Additional",
+        "url": "https://raw.githubusercontent.com/saadfaizy/Saad-BDIX-additional-nuvio/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher BN CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "mr": {
+    "code": "mr",
+    "name": "Marathi",
+    "native": "मराठी",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      }
+    ]
+  },
+  "gu": {
+    "code": "gu",
+    "name": "Güceratça",
+    "native": "ગુજરાતી",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "TJ Multi-Audio",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      }
+    ]
+  },
+  "pa": {
+    "code": "pa",
+    "name": "Pencapça",
+    "native": "ਪੰਜਾਬੀ",
+    "flag": "🇮🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Einthusan Direct",
+        "url": "https://raw.githubusercontent.com/Maady012/nuvio-einthusan-plugin/main/manifest.json"
+      }
+    ]
+  },
+  "ur": {
+    "code": "ur",
+    "name": "Urduca",
+    "native": "اردو",
+    "flag": "🇵🇰",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "TJ Multi-Audio",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "AdmKnight UR CS3",
+        "url": "https://raw.githubusercontent.com/admknight/CloudstreamExtensions/builds/repo.json"
+      }
+    ]
+  },
+  "ja": {
+    "code": "ja",
+    "name": "Japonca",
+    "native": "日本語",
+    "flag": "🇯🇵",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Anime Nuvio",
+        "url": "https://raw.githubusercontent.com/D3adlyRocket/Anime-Nuvio/main/manifest.json"
+      },
+      {
+        "name": "FD Nuvio Anime",
+        "url": "https://raw.githubusercontent.com/fadidj2/FD-nuvio/main/manifest.json"
+      },
+      {
+        "name": "All-in-One Anime",
+        "url": "https://raw.githubusercontent.com/NuvioPlugin/All-in-One-Nuvio/main/manifest.json"
+      },
+      {
+        "name": "Arakurumi Anime",
+        "url": "https://raw.githubusercontent.com/arakurumi/nuvio-anime-providers/main/manifest.json"
+      }
+    ]
+  },
+  "ko": {
+    "code": "ko",
+    "name": "Korece",
+    "native": "한국어",
+    "flag": "🇰🇷",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Viu K-Drama",
+        "url": "https://raw.githubusercontent.com/arakurumi/nuvio-viu-providers/main/manifest.json"
+      },
+      {
+        "name": "KissKH Asian",
+        "url": "https://raw.githubusercontent.com/MacReyhan/my-nuvio-repo/main/manifest.json"
+      },
+      {
+        "name": "TJ K-Drama",
+        "url": "https://raw.githubusercontent.com/Skywave22/Plugins-TJ/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "Phisher KO CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  },
+  "zh": {
+    "code": "zh",
+    "name": "Çince",
+    "native": "中文",
+    "flag": "🇨🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "Nuvio ZH (Kanju)",
+        "url": "https://raw.githubusercontent.com/skfunghk/nuvio-plugins/main/manifest.json"
+      },
+      {
+        "name": "DonghuaStream ZH",
+        "url": "https://raw.githubusercontent.com/GaloreMacow/donghuastream-nuvio/main/manifest.json"
+      },
+      {
+        "name": "Nuvio Donghua",
+        "url": "https://raw.githubusercontent.com/robertozv80/nuvio-donghua/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CloudStream Asian CS3",
+        "url": "https://raw.githubusercontent.com/Latrixz/cloudstream-asian/code/repo.json"
+      }
+    ]
+  },
+  "zh_cn": {
+    "code": "zh_cn",
+    "name": "Çince (Basitleştirilmiş)",
+    "native": "简体中文",
+    "flag": "🇨🇳",
+    "kind": "nuvio",
+    "baseLang": "zh",
+    "repos": [
+      {
+        "name": "Nuvio ZH (Kanju)",
+        "url": "https://raw.githubusercontent.com/skfunghk/nuvio-plugins/main/manifest.json"
+      },
+      {
+        "name": "DonghuaStream ZH",
+        "url": "https://raw.githubusercontent.com/GaloreMacow/donghuastream-nuvio/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CloudStream Asian CS3",
+        "url": "https://raw.githubusercontent.com/Latrixz/cloudstream-asian/code/repo.json"
+      }
+    ]
+  },
+  "zh_tw": {
+    "code": "zh_tw",
+    "name": "Çince (Geleneksel)",
+    "native": "繁體中文",
+    "flag": "🇹🇼",
+    "kind": "nuvio",
+    "baseLang": "zh",
+    "repos": [
+      {
+        "name": "Nuvio ZH (Kanju)",
+        "url": "https://raw.githubusercontent.com/skfunghk/nuvio-plugins/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CloudStream Asian CS3",
+        "url": "https://raw.githubusercontent.com/Latrixz/cloudstream-asian/code/repo.json"
+      }
+    ]
+  },
+  "yue": {
+    "code": "yue",
+    "name": "Kantonca",
+    "native": "粵語",
+    "flag": "🇭🇰",
+    "kind": "enhub_subset",
+    "baseLang": "zh",
+    "note": "Çoklu dil EN Hub + Çince/Kantonca eşleşmesi"
+  },
+  "th": {
+    "code": "th",
+    "name": "Tayca",
+    "native": "ไทย",
+    "flag": "🇹🇭",
+    "kind": "enhub_subset",
+    "note": "Kisskh / Viu (EN Hub + CS3)",
+    "cs3Repos": [
+      {
+        "name": "WaroenkTV TH CS3",
+        "url": "https://raw.githubusercontent.com/WaroenkTV/m3u8/main/repo.json"
+      }
+    ]
+  },
+  "vi": {
+    "code": "vi",
+    "name": "Vietnamca",
+    "native": "Tiếng Việt",
+    "flag": "🇻🇳",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "VietStream",
+        "url": "https://raw.githubusercontent.com/henryhnguy/vietstream-nuvio-addon/main/nuvio-plugin/manifest.json"
+      },
+      {
+        "name": "NguonC VN",
+        "url": "https://raw.githubusercontent.com/maimailucie/nguonc-nuvio-provider/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "CloudStream VN CS3",
+        "url": "https://raw.githubusercontent.com/leeshin5757/cloudstream-plugin-vn/main/repo.json"
+      }
+    ]
+  },
+  "id": {
+    "code": "id",
+    "name": "Endonezce",
+    "native": "Bahasa Indonesia",
+    "flag": "🇮🇩",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "IndoFetch ID",
+        "url": "https://raw.githubusercontent.com/destradess/indofetch/main/manifest.json"
+      },
+      {
+        "name": "Arakurumi ID Anime",
+        "url": "https://raw.githubusercontent.com/arakurumi/nuvio-anime-providers/main/manifest.json"
+      },
+      {
+        "name": "Viu ID",
+        "url": "https://raw.githubusercontent.com/arakurumi/nuvio-viu-providers/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "IndoStream CS3",
+        "url": "https://raw.githubusercontent.com/TeKuma25/IndoStream/builds/repo.json"
+      }
+    ]
+  },
+  "ms": {
+    "code": "ms",
+    "name": "Malayca",
+    "native": "Bahasa Melayu",
+    "flag": "🇲🇾",
+    "kind": "nuvio",
+    "repos": [
+      {
+        "name": "IndoFetch MY",
+        "url": "https://raw.githubusercontent.com/destradess/indofetch/main/manifest.json"
+      }
+    ],
+    "cs3Repos": [
+      {
+        "name": "MTS Malay CS3",
+        "url": "https://raw.githubusercontent.com/muhamadakmal854-svg/Provider/builds/repo.json"
+      }
+    ]
+  },
+  "tl": {
+    "code": "tl",
+    "name": "Filipince",
+    "native": "Filipino / Tagalog",
+    "flag": "🇵🇭",
+    "kind": "enhub_subset",
+    "note": "Çoklu dil EN Hub + CS3 Pinoy",
+    "cs3Repos": [
+      {
+        "name": "Phisher TL CS3",
+        "url": "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/builds/repo.json"
+      }
+    ]
+  }
+}

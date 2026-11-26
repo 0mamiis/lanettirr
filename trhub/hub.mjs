@@ -479,6 +479,13 @@ const EN_REPOS = [
   'https://raw.githubusercontent.com/D3adlyRocket/All-in-One-Nuvio/refs/heads/main/manifest.json',
   'https://raw.githubusercontent.com/yoruix/nuvio-providers/refs/heads/main/manifest.json',
   'https://raw.githubusercontent.com/michat88/nuvio-providers/refs/heads/main/manifest.json',
+  'https://raw.githubusercontent.com/itsmeadarsh2008/Streamline/main/manifest.json',
+  'https://raw.githubusercontent.com/PirateZoro9/asura-providers/main/manifest.json',
+  'https://raw.githubusercontent.com/hihihihihiiray/nuvio-plugins/main/manifest.json',
+  'https://raw.githubusercontent.com/A2R14N/nuvio-providers/main/manifest.json',
+  'https://raw.githubusercontent.com/rareanimeaddon-blip/Nuvio-plugins/main/manifest.json',
+  'https://raw.githubusercontent.com/KhooLy/nuvio-providers/master/manifest.json',
+  'https://raw.githubusercontent.com/flix-dlp/All-in-One-Nuvio/main/manifest.json',
 ];
 function enRepoManifest() {
   const seen = new Set();
@@ -487,6 +494,7 @@ function enRepoManifest() {
     let man; try { man = JSON.parse(cachedText(repoUrl)); } catch { continue; }
     for (const s of (man.scrapers || [])) {
       if (!s || s.enabled === false || !s.filename) continue;
+      if (/(?:(?:torrentio|yts|torrastream|filmestorrent|cpasbien|1337x|piratebay|eztv|nyaa|usenet|kickass|rarbg)|(?<!no)torrent)/i.test((s.id || "") + " " + (s.name || ""))) continue;
       const kId = norm(s.id || s.name);
       const kName = norm(s.name || s.id);
       if (seen.has(kId) || seen.has(kName)) continue;
@@ -499,7 +507,7 @@ function enRepoManifest() {
   return {
     name: 'EN Hub',
     version: '1.0.0',
-    description: 'Yabancı sağlayıcılar (All-in-One-Nuvio + Yoru + Michat88), tekilleştirilmiş.',
+    description: 'Yabancı sağlayıcılar (10 EN depo: All-in-One, Yoru, Michat88, Streamline, Asura, Ray, A2R14N, rareanime, KhooLy, flix-dlp), tekilleştirilmiş.',
     author: 'EN Hub',
     scrapers,
   };

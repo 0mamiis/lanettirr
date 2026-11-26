@@ -224,7 +224,7 @@ Start-ServiceProc -Name 'trhub' -Port $hubP -FilePath $nodeExe -ArgumentList @('
 $hubOk = Wait-HttpOk -Url ('http://127.0.0.1:' + $hubP + '/en-repo/manifest.json') -TimeoutSec 25
 
 Start-ServiceProc -Name 'mega-bridge' -Port $megaP -FilePath $nodeExe -ArgumentList @('index.js') -WorkingDirectory (Join-Path $Root 'mega-bridge') | Out-Null
-$megaOk = Wait-HttpOk -Url ('http://127.0.0.1:' + $megaP + '/manifest.json') -TimeoutSec 20
+$megaOk = Wait-HttpOk -Url ('http://127.0.0.1:' + $megaP + '/health') -TimeoutSec 20
 
 # 4. Opsiyonel Cloudflare Tunnel + AIOStreams senkronizasyonu
 $tunnelEnabled = ($env:ENABLE_TUNNEL -eq '1') -or ($env:ENABLE_TUNNEL -eq 'true')
@@ -298,7 +298,10 @@ $rows = @(
 )
 $rows | Format-Table -AutoSize | Out-String | Write-Host
 Write-Host 'Nuvio Desktop Linkleri:' -ForegroundColor Green
-Write-Host ('  TR Hub : http://127.0.0.1:' + $hubP + '/nuvio-repo/manifest.json')
-Write-Host ('  EN Hub : http://127.0.0.1:' + $hubP + '/en-repo/manifest.json')
-Write-Host ('  Mega   : http://127.0.0.1:' + $megaP + '/manifest.json')
+Write-Host ('  Lanettirr Repo : http://127.0.0.1:' + $megaP + '/saved/nuvio-repo/manifest.json')
+Write-Host ('  Ayar Paneli    : http://127.0.0.1:' + $megaP + '/configure')
+Write-Host ('  Fusion Rozet   : http://127.0.0.1:' + $megaP + '/badges.json')
+Write-Host ('  Stremio / AIO  : http://127.0.0.1:' + $megaP + '/saved/manifest.json')
+Write-Host ('  Ham TR Hub     : http://127.0.0.1:' + $hubP + '/nuvio-repo/manifest.json')
+Write-Host ('  Ham EN Hub     : http://127.0.0.1:' + $hubP + '/en-repo/manifest.json')
 

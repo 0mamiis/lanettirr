@@ -15,3 +15,7 @@ https://raw.githubusercontent.com/tecobaba/Cloudstream-Turkce-Eklentiler/main/re
 https://raw.githubusercontent.com/bilhan50/BilhanTR/main/repo.json
 https://raw.githubusercontent.com/BoomBookTR/Pitipitii/master/repo.json
 https://raw.githubusercontent.com/miskin1702/aslan-dist/main/repo.json
+https://raw.githubusercontent.com/GitLatte/Sinetech/main/repo.json
+https://raw.githubusercontent.com/SafakStream/SafakStream-Extensions/builds/repo.json
+https://raw.githubusercontent.com/GD2021/CDEScript/main/repo.json
+https://raw.githubusercontent.com/merb2y/cloudstream-tr-repo/main/repo.json
