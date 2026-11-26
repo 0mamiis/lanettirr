@@ -296,6 +296,53 @@ async function fetchTrHubGroups() {
     }
   });
 }
+const CS_HOST_URL = (process.env.CS_HOST_URL || process.env.BB_HOST || "http://127.0.0.1:7200").replace(/\/+$/, "");
+function csRepoId(code, name) { return String(code || "").toLowerCase() + "_cs3_" + slugRepo(name); }
+function cs3NormBaseLang(raw) {
+  const s = String(raw || "").trim().toLowerCase().replace(/_/g, "-");
+  if (!s || s === "none" || s === "multi" || s === "all") return "";
+  if (s === "mx" || s === "lat" || s === "la" || s === "latam" || s.startsWith("es-")) return "es";
+  if (s === "br" || s.startsWith("pt-")) return "pt";
+  if (s === "cn" || s === "tw" || s === "hk" || s === "yue" || s.startsWith("zh-")) return "zh";
+  if (s === "gb" || s === "uk" || s === "us" || s.startsWith("en-")) return "en";
+  const map = { jp: "ja", kr: "ko", ua: "uk", gr: "el", cz: "cs", dk: "da", se: "sv", nb: "no", nn: "no", ir: "fa", vn: "vi", ph: "tl" };
+  if (map[s]) return map[s];
+  return s.split("-")[0];
+}
+function cs3LangMatches(pluginLang, wantLang, repoTotal) {
+  const wb = cs3NormBaseLang(wantLang);
+  if (!wb) return false;
+  const pb = cs3NormBaseLang(pluginLang);
+  if (pb) return pb === wb;
+  return repoTotal > 0 && repoTotal <= 20;
+}
+function cs3IsVodPlugin(p) {
+  const name = String(p?.internalName || p?.name || "").trim();
+  if (!name || !p?.url || p.status === 0) return false;
+  if (/(porn|xham|spank|hentai|uncut|xnxx|xvideo|torrent|magnet|iptv|live[-_ ]?tv|pluto[-_ ]?tv|radio|manga|novel|comic|audiobook|podcast|sports?live)/i.test(name)) return false;
+  const tv = Array.isArray(p.tvTypes) ? p.tvTypes : [];
+  if (tv.length) {
+    let hasVod = false;
+    for (const t of tv) {
+      const v = String(t || "").toLowerCase();
+      if (v === "nsfw") return false;
+      if (v === "movie" || v === "tvseries" || v === "anime" || v === "animemovie" || v === "ova" || v === "cartoon" || v === "asiandrama" || v === "documentary") hasVod = true;
+    }
+    if (!hasVod) return false;
+  }
+  return true;
+}
+async function fetchCs3RepoPlugins(repoUrl, timeoutMs = 12000) {
+  const root = await fetchManifestJson(repoUrl, timeoutMs);
+  if (!root) return [];
+  if (Array.isArray(root)) return root;
+  const lists = Array.isArray(root.pluginLists) ? root.pluginLists : [];
+  if (!lists.length) return [];
+  const settled = await Promise.allSettled(lists.map(pl => fetchManifestJson(String(pl || "").replace(/%s/g, ""), timeoutMs)));
+  const out = [];
+  for (const r of settled) if (r.status === "fulfilled" && Array.isArray(r.value)) out.push(...r.value);
+  return out;
+}
 async function buildRepoCatalog() {
   const trG = await fetchTrHubGroups();
   const out = {};
@@ -342,6 +389,17 @@ async function buildRepoCatalog() {
         count: matched.length,
       }];
     }
+    if (code !== "tr" && Array.isArray(def.cs3Repos) && def.cs3Repos.length) {
+      if (!Array.isArray(out[code])) out[code] = [];
+      for (const r of def.cs3Repos) {
+        const subPath = (r.url || "").replace(/^https?:\/\/raw\.githubusercontent\.com\//i, "").split("/").slice(0, 2).join("/") || "CS3 Repo";
+        out[code].push({
+          id: csRepoId(code, r.name),
+          name: r.name,
+          sub: "CloudStream (CS3) · " + subPath,
+        });
+      }
+    }
   }
   return out;
 }
@@ -375,6 +433,34 @@ async function getSourcesForRepo(code, repoId) {
     if (rid === "tr_cs3") return trG.cs3.map(x => ({ id: x.id, name: x.name }));
     if (rid === "tr_nuvio") return trG.nuvio.map(x => ({ id: x.id, name: x.name }));
     return [];
+  }
+  const csDef = LANG_CATALOG[c];
+  const csRepoObj = csDef && Array.isArray(csDef.cs3Repos) ? csDef.cs3Repos.find(r => csRepoId(c, r.name) === rid) : null;
+  if (csRepoObj && csRepoObj.url) {
+    const ckCs = c + "|" + rid;
+    const hitCs = repoSourcesCache.get(ckCs);
+    if (hitCs && Date.now() - hitCs.t < 600000) return hitCs.v;
+    return singleflight(repoSourcesInflight, ckCs, async () => {
+      const hitCs2 = repoSourcesCache.get(ckCs);
+      if (hitCs2 && Date.now() - hitCs2.t < 600000) return hitCs2.v;
+      try {
+        const list = await fetchCs3RepoPlugins(csRepoObj.url, 12000);
+        const out = [];
+        const seen = new Set();
+        for (const entry of list) {
+          if (!cs3IsVodPlugin(entry) || !cs3LangMatches(entry.language, c, list.length)) continue;
+          const pname = String(entry.name || entry.internalName || "").trim();
+          const sid = "p:" + slugRepo(entry.internalName || pname);
+          if (!sid || seen.has(sid)) continue;
+          seen.add(sid);
+          out.push({ id: sid, name: pname });
+        }
+        out.sort((a, b) => a.name.localeCompare(b.name));
+        repoSourcesCache.set(ckCs, { t: Date.now(), v: out });
+        capMap(repoSourcesCache, 100);
+        return out;
+      } catch { return []; }
+    });
   }
   if (c === "en") {
     await ensureProviders();
@@ -1412,7 +1498,177 @@ async function loadLangProviders(code) {
   langLoadPromises.set(code, prom);
   return prom;
 }
-async function getProvidersForLangs(langs) {
+let lastDynCs3Sig = "{}";
+let lastDynCs3At = 0;
+let csHostOfflineUntil = 0;
+let csHostProvCache = { t: 0, v: [] };
+const dynCs3SyncInflight = new Map();
+const CS3_MOVIE_TYPES = new Set(["movie", "animemovie", "cartoon", "asiandrama", "documentary"]);
+const CS3_SERIES_TYPES = new Set(["tvseries", "anime", "ova", "cartoon", "asiandrama", "documentary"]);
+function buildDesiredDynCs3(langs, disabledRepos = []) {
+  const off = new Set((disabledRepos || []).map(s => String(s || "").toLowerCase()));
+  const desired = {};
+  for (const raw of (langs || [])) {
+    const c = String(raw || "").toLowerCase();
+    if (!c || c === "tr") continue;
+    const def = LANG_CATALOG[c];
+    if (!def || !Array.isArray(def.cs3Repos) || !def.cs3Repos.length) continue;
+    const urls = [];
+    for (const r of def.cs3Repos) {
+      if (!r || !r.url) continue;
+      if (off.has(csRepoId(c, r.name))) continue;
+      urls.push(r.url);
+    }
+    if (urls.length) desired[c] = urls;
+  }
+  return desired;
+}
+async function syncDynamicCs3(langs, disabledRepos = [], opts = {}) {
+  const desired = buildDesiredDynCs3(langs, disabledRepos);
+  const sig = JSON.stringify(desired);
+  if (sig === "{}" && lastDynCs3Sig === "{}" && !opts.force) return { ok: true, skipped: true };
+  if (sig === lastDynCs3Sig && Date.now() - lastDynCs3At < 10 * 60 * 1000 && !opts.force) return { ok: true, cached: true };
+  if (csHostOfflineUntil > Date.now() && !opts.force) return { ok: false, offline: true };
+  return singleflight(dynCs3SyncInflight, sig + (opts.async ? "|a" : "|s"), async () => {
+    const timeoutMs = opts.async ? 3500 : (opts.timeoutMs || 5000);
+    try {
+      const r = await fetch(CS_HOST_URL + "/dyn-sync" + (opts.async ? "?async=1" : ""), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ langs: desired }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (!r.ok) {
+        if (r.status === 404) csHostOfflineUntil = Date.now() + 300000;
+        return { ok: false, status: r.status };
+      }
+      const j = await r.json().catch(() => ({ ok: true }));
+      lastDynCs3Sig = sig;
+      lastDynCs3At = Date.now();
+      csHostOfflineUntil = 0;
+      csHostProvCache.t = 0;
+      return j;
+    } catch (e) {
+      if (e && (e.name === "TimeoutError" || e.name === "AbortError")) {
+        lastDynCs3Sig = sig;
+        lastDynCs3At = Date.now();
+        return { ok: true, pending: true };
+      }
+      csHostOfflineUntil = Date.now() + 60000;
+      return { ok: false, offline: true };
+    }
+  });
+}
+async function getCsHostDynProviders() {
+  if (csHostOfflineUntil > Date.now()) return [];
+  if (Date.now() - csHostProvCache.t < 20000) return csHostProvCache.v;
+  try {
+    const r = await fetch(CS_HOST_URL + "/providers", { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) return csHostProvCache.v;
+    const arr = await r.json();
+    const dyn = Array.isArray(arr) ? arr.filter(p => p && p.status !== 0 && p.scope === "dyn") : [];
+    csHostProvCache = { t: Date.now(), v: dyn };
+    return dyn;
+  } catch {
+    csHostOfflineUntil = Date.now() + 60000;
+    return [];
+  }
+}
+function cs3NormTitle(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i").replace(/[^a-z0-9]+/g, " ").trim();
+}
+function cs3PickResult(results, titles, year) {
+  const ts = titles.filter(Boolean).map(cs3NormTitle).filter(Boolean);
+  let best = null, bestScore = 0;
+  for (const r of (results || []).slice(0, 25)) {
+    const n = cs3NormTitle(r?.name);
+    if (!n) continue;
+    let s = 0;
+    for (const t of ts) {
+      let c = 0;
+      if (n === t) c = 100;
+      else if (n.startsWith(t + " ") || t.startsWith(n + " ")) c = 75;
+      if (c > s) s = c;
+    }
+    if (!s) continue;
+    if (year && r.year) s += Math.abs(Number(r.year) - Number(year)) <= 1 ? 30 : -80;
+    if (s > bestScore) { best = r; bestScore = s; }
+  }
+  return bestScore >= 90 ? best : null;
+}
+function cs3PickEpisode(episodes, season, episode) {
+  const eps = Array.isArray(episodes) ? episodes : [];
+  const seasons = new Set(eps.map(e => e?.season).filter(s => s != null));
+  let hit = eps.find(e => Number(e?.episode) === Number(episode) && (Number(e?.season) === Number(season) || (e?.season == null && (Number(season) === 1 || seasons.size === 0))));
+  if (!hit && seasons.size === 0) hit = eps.find(e => Number(e?.episode) === Number(episode));
+  return hit || null;
+}
+async function csHostCallJson(pathWithQuery, timeoutMs, extSignal) {
+  const sig = combineSignals(timeoutMs, extSignal);
+  try {
+    const r = await fetch(CS_HOST_URL + pathWithQuery, { signal: sig.signal });
+    const j = await r.json();
+    if (j && j.error) throw new Error(String(j.error).slice(0, 140));
+    return j;
+  } finally { sig.cleanup(); }
+}
+function makeDynCs3Provider(p, code) {
+  const def = LANG_CATALOG[code];
+  const repoObj = def && Array.isArray(def.cs3Repos) ? def.cs3Repos.find(r => r && r.url === p.repoUrl) : null;
+  const rid = repoObj ? csRepoId(code, repoObj.name) : (code + "_cs3");
+  const repoLabel = repoObj ? repoObj.name : (code.toUpperCase() + " CS3");
+  const tvs = Array.isArray(p.tvTypes) ? p.tvTypes.map(x => String(x || "").toLowerCase()) : [];
+  const supportedTypes = [];
+  if (!tvs.length || tvs.some(t => CS3_MOVIE_TYPES.has(t))) supportedTypes.push("movie");
+  if (!tvs.length || tvs.some(t => CS3_SERIES_TYPES.has(t))) supportedTypes.push("tv");
+  const pname = String(p.name || p.plugin || "CS3");
+  const pid = "cs3_" + slugRepo(p.plugin || pname);
+  return {
+    meta: { id: pid, name: pname, supportedTypes, _cs3: true },
+    repo: { name: repoLabel },
+    _langCode: code,
+    _repoId: rid,
+    _repoIds: new Set([rid]),
+    async getStreams(tmdbId, mediaType, season, episode, ctx = {}) {
+      try {
+        const info = await getTmdbInfo(tmdbId, mediaType);
+        const title = info?.title;
+        if (!title) return [];
+        const titles = [title];
+        const res = await csHostCallJson("/search?p=" + encodeURIComponent(pname) + "&q=" + encodeURIComponent(title), 14000, ctx.signal);
+        const found = cs3PickResult(Array.isArray(res) ? res : ((res && (res.list || res.items)) || []), titles, null);
+        if (!found || !found.url) return [];
+        const lr = await csHostCallJson("/load?p=" + encodeURIComponent(pname) + "&url=" + encodeURIComponent(found.url), 16000, ctx.signal);
+        let data = null;
+        if (mediaType === "movie") data = lr?.dataUrl || (lr?.episodes && lr.episodes[0] && lr.episodes[0].data) || lr?.url;
+        else { const ep = cs3PickEpisode(lr?.episodes, season, episode); data = ep && ep.data; }
+        if (!data) return [];
+        const kr = await csHostCallJson("/links?p=" + encodeURIComponent(pname) + "&data=" + encodeURIComponent(data), 22000, ctx.signal);
+        const subs = (kr?.subs || []).filter(s => s && s.url).map((s, i) => ({ id: "cs3s" + i, url: s.url, lang: s.lang || code }));
+        const out = [];
+        for (const l of (kr?.links || [])) {
+          if (!l || !l.url || !/^https?:\/\//i.test(String(l.url))) continue;
+          if (/TORRENT|MAGNET|DASH/i.test(String(l.type || ""))) continue;
+          const hdr = l.headers && typeof l.headers === "object" ? { ...l.headers } : {};
+          if (l.referer && !hdr.Referer && !hdr.referer) hdr.Referer = String(l.referer);
+          const qNum = Number(l.quality);
+          const qStr = (qNum !== 400 && qNum >= 240 && qNum <= 4320) ? (qNum + "p") : "";
+          const lbl = String(l.name || l.source || "").trim();
+          out.push({
+            name: lbl && lbl.toLowerCase() !== pname.toLowerCase() ? (pname + " · " + lbl) : pname,
+            title: (found.name || title) + (mediaType === "tv" ? (" S" + season + "E" + episode) : "") + (lbl ? ("\n" + lbl) : ""),
+            url: String(l.url),
+            quality: qStr,
+            headers: Object.keys(hdr).length ? hdr : undefined,
+            subtitles: subs.length ? subs : undefined,
+          });
+        }
+        return out;
+      } catch { return []; }
+    },
+  };
+}
+async function getProvidersForLangs(langs, disabledRepos = []) {
   const want = new Set((langs && langs.length ? langs : ["tr", "en"]).map(s => s.toLowerCase()));
   await ensureProviders({ needEn: [...want].some(c => c !== "tr") });
   const out = [];
@@ -1448,6 +1704,18 @@ async function getProvidersForLangs(langs) {
   if (extraCodes.length) {
     const extraLists = await Promise.all(extraCodes.map(loadLangProviders));
     for (const list of extraLists) for (const p of list) addP(p);
+  }
+  const dynCs3Langs = [...want].filter(c => c !== "tr" && LANG_CATALOG[c] && Array.isArray(LANG_CATALOG[c].cs3Repos) && LANG_CATALOG[c].cs3Repos.length);
+  if (dynCs3Langs.length) {
+    await syncDynamicCs3([...want], disabledRepos, { async: false, timeoutMs: 4500 });
+    const dynProvs = await getCsHostDynProviders();
+    for (const c of dynCs3Langs) {
+      for (const p of dynProvs) {
+        if (Array.isArray(p.dynLangs) && p.dynLangs.includes(c)) addP(makeDynCs3Provider(p, c));
+      }
+    }
+  } else if (lastDynCs3Sig !== "{}") {
+    syncDynamicCs3([], [], { async: true }).catch(() => {});
   }
   return out;
 }
@@ -2823,7 +3091,7 @@ async function getStreams(type, id, langs = ["tr", "en"], timeoutSec = 45, disab
   const offSet = new Set((disabledRepos || []).map(s => String(s || "").toLowerCase()));
   const offPSet = new Set((disabledProvs || []).map(s => String(s || "").toLowerCase()));
   const trGroups = langs.includes("tr") && (offSet.has("tr_cs3") || offSet.has("tr_nuvio") || offPSet.size) ? await fetchTrHubGroups() : null;
-  const activeProviders = (await getProvidersForLangs(langs)).filter(p => {
+  const activeProviders = (await getProvidersForLangs(langs, disabledRepos)).filter(p => {
     if (p.meta?.id === "trhub") {
       if (offSet.has("tr_trhub") || (offSet.has("tr_cs3") && offSet.has("tr_nuvio"))) return false;
       return true;
@@ -4358,6 +4626,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const saved = saveConfigStr(parsed.cfg);
+      const savedCfg = parseConfig(saved);
+      syncDynamicCs3(savedCfg.langs, savedCfg.disabledRepos, { async: true, force: true }).catch(() => {});
       json(res, 200, { ok: true, cfg: saved, url: origin + "/saved/nuvio-repo/manifest.json", stremioUrl: origin + "/saved/manifest.json", cs3Url: origin + "/saved/cs3/repo.json" });
     } catch (e) {
       json(res, e?.status || 400, { ok: false, error: e?.message || "Bad request" });
@@ -4889,6 +5159,7 @@ const onListen = async () => {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   const initCfg = parseConfig(loadSavedConfigStr());
   await ensureProviders({ needEn: (initCfg.langs || ["tr", "en"]).some(c => c !== "tr") });
+  syncDynamicCs3(initCfg.langs, initCfg.disabledRepos, { async: true }).catch(() => {});
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`  ✅  Configure UI : http://${dispHost}:${PORT}/configure`);
   console.log(`  ✅  Nuvio Repo   : http://${dispHost}:${PORT}/saved/nuvio-repo/manifest.json`);

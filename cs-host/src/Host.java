@@ -26,11 +26,15 @@ public class Host {
   static final ObjectMapper MAPPER = new ObjectMapper();
   static final Map<String, Entry> REG = new ConcurrentHashMap<>();   // plugin internalName -> entry
   static final Object LOAD_LOCK = new Object();
+  static final Object DYN_SYNC_LOCK = new Object();
+  static final Map<String, List<String>> DYN_REPOS = new ConcurrentHashMap<>();
   static volatile long lastSync = 0; static volatile String lastSyncNote = "never";
+  static volatile long lastDynSync = 0; static volatile String lastDynSyncNote = "idle";
   static final Set<String> SKIP = new HashSet<>(Arrays.asList("class", "recommendations", "actors", "trailers", "syncData", "comingSoon", "posterHeaders", "backgroundPosterUrl", "logoUrl", "plot", "tags", "contentRating", "duration"));
 
   static class Entry {
-    String name, key, version, lang, url; int status; List<String> tvTypes = new ArrayList<>();
+    String name, key, version, lang, url, scope = "core", repoUrl = ""; int status; List<String> tvTypes = new ArrayList<>();
+    Set<String> dynLangs = ConcurrentHashMap.newKeySet();
     List<Object> providers = new ArrayList<>(); URLClassLoader loader; String error; AtomicInteger ok = new AtomicInteger(), fail = new AtomicInteger();
   }
 
@@ -70,14 +74,176 @@ public class Host {
         if (adult || name.matches("(?i).*(porn|xham|spank|hentai|uncut|xnxx|xvideo).*")) { skipped++; continue; }
         String key = (name + "-" + hash.replace("sha256-", "").substring(0, Math.min(10, hash.replace("sha256-", "").length()))).replaceAll("[^A-Za-z0-9._-]", "_");
         Entry old = REG.get(name);
-        if (old != null && old.key.equals(key) && old.error == null) { old.status = status; continue; }
-        try { loadPlugin(p, name, key, hash, url, status, old); loaded++; }
-        catch (Throwable t) { failed++; Entry e = old != null ? old : new Entry(); e.name = name; e.key = key; e.error = String.valueOf(t); e.status = status; REG.putIfAbsent(name, e); log("plugin " + name + " FAILED: " + t); }
+        if (old != null && old.key.equals(key) && old.error == null) { old.status = status; old.scope = "core"; continue; }
+        try { loadPlugin(p, name, key, hash, url, status, old, "core", "", null); loaded++; }
+        catch (Throwable t) { failed++; Entry e = old != null ? old : new Entry(); e.name = name; e.key = key; e.error = String.valueOf(t); e.status = status; e.scope = "core"; REG.putIfAbsent(name, e); log("plugin " + name + " FAILED: " + t); }
       }
-      for (String n : new ArrayList<>(REG.keySet())) if (!seen.contains(n)) { removeProviders(REG.remove(n)); log("plugin removed from repo: " + n); }
+      for (String n : new ArrayList<>(REG.keySet())) {
+        Entry cur = REG.get(n);
+        if (cur != null && "core".equals(cur.scope) && !seen.contains(n)) { removeProviders(REG.remove(n)); log("plugin removed from repo: " + n); }
+      }
       lastSync = System.currentTimeMillis(); lastSyncNote = "loaded=" + loaded + " failed=" + failed + " skipped=" + skipped + " total=" + REG.size();
       log("sync: " + lastSyncNote);
     } catch (Throwable t) { lastSyncNote = "sync error: " + t; log(lastSyncNote); }
+  }
+
+  static String normBaseLang(String raw) {
+    String s = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+    if (s.isEmpty() || s.equals("none") || s.equals("multi") || s.equals("all")) return "";
+    if (s.equals("mx") || s.equals("lat") || s.equals("la") || s.equals("latam") || s.startsWith("es-")) return "es";
+    if (s.equals("br") || s.startsWith("pt-")) return "pt";
+    if (s.equals("cn") || s.equals("tw") || s.equals("hk") || s.equals("yue") || s.startsWith("zh-")) return "zh";
+    if (s.equals("gb") || s.equals("uk") || s.equals("us") || s.startsWith("en-")) return "en";
+    if (s.equals("jp")) return "ja";
+    if (s.equals("kr")) return "ko";
+    if (s.equals("ua")) return "uk";
+    if (s.equals("gr")) return "el";
+    if (s.equals("cz")) return "cs";
+    if (s.equals("dk")) return "da";
+    if (s.equals("se")) return "sv";
+    if (s.equals("nb") || s.equals("nn")) return "no";
+    if (s.equals("ir")) return "fa";
+    if (s.equals("vn")) return "vi";
+    if (s.equals("ph")) return "tl";
+    int dash = s.indexOf('-');
+    return dash > 0 ? s.substring(0, dash) : s;
+  }
+
+  static boolean langMatchesDyn(String pluginLang, String wantLang, int repoTotal) {
+    String wb = normBaseLang(wantLang);
+    if (wb.isEmpty()) return false;
+    String pb = normBaseLang(pluginLang);
+    if (!pb.isEmpty()) return pb.equals(wb);
+    return repoTotal > 0 && repoTotal <= 20;
+  }
+
+  static boolean isDynVodPlugin(JsonNode p, String name) {
+    if (name == null || name.isEmpty()) return false;
+    if (p.path("url").asText("").isEmpty() || p.path("status").asInt(1) == 0) return false;
+    if (name.matches("(?i).*(porn|xham|spank|hentai|uncut|xnxx|xvideo|torrent|magnet|iptv|live[-_ ]?tv|pluto[-_ ]?tv|radio|manga|novel|comic|audiobook|podcast|sports?live).*")) return false;
+    JsonNode tv = p.path("tvTypes");
+    if (tv.isArray() && tv.size() > 0) {
+      boolean hasVod = false;
+      for (JsonNode t : tv) {
+        String v = t.asText("");
+        if (v.equalsIgnoreCase("NSFW")) return false;
+        if (v.equalsIgnoreCase("Movie") || v.equalsIgnoreCase("TvSeries") || v.equalsIgnoreCase("Anime") || v.equalsIgnoreCase("AnimeMovie") || v.equalsIgnoreCase("OVA") || v.equalsIgnoreCase("Cartoon") || v.equalsIgnoreCase("AsianDrama") || v.equalsIgnoreCase("Documentary")) hasVod = true;
+      }
+      if (!hasVod) return false;
+    }
+    return true;
+  }
+
+  static List<JsonNode> fetchRepoPluginList(String repoUrl) {
+    List<JsonNode> out = new ArrayList<>();
+    try {
+      JsonNode root = MAPPER.readTree(get(repoUrl));
+      if (root.isArray()) { for (JsonNode p : root) out.add(p); }
+      else {
+        for (JsonNode pl : root.path("pluginLists")) {
+          try {
+            JsonNode arr = MAPPER.readTree(get(pl.asText().replace("%s", "")));
+            if (arr.isArray()) for (JsonNode p : arr) out.add(p);
+          } catch (Throwable t) { log("dyn pluginList failed " + pl + ": " + t.getMessage()); }
+        }
+      }
+    } catch (Throwable t) { log("dyn repo failed " + repoUrl + ": " + t.getMessage()); }
+    return out;
+  }
+
+  static Map<String, Object> syncDynamic(Map<String, List<String>> langRepos) {
+    synchronized (DYN_SYNC_LOCK) {
+      Map<String, Object> res = new LinkedHashMap<>();
+      try {
+        warmUp();
+        Files.createDirectories(CACHE);
+        DYN_REPOS.clear();
+        if (langRepos != null) {
+          for (Map.Entry<String, List<String>> me : langRepos.entrySet()) {
+            if (me.getKey() != null && !me.getKey().isBlank() && me.getValue() != null && !me.getValue().isEmpty()) {
+              DYN_REPOS.put(me.getKey().trim().toLowerCase(Locale.ROOT), new ArrayList<>(me.getValue()));
+            }
+          }
+        }
+        int maxPerLang = Math.max(5, Math.min(80, envInt("BB_DYN_MAX_PER_LANG", 30)));
+        int maxTotal = Math.max(10, Math.min(240, envInt("BB_DYN_MAX_TOTAL", 120)));
+        Map<String, List<JsonNode>> fetchedCache = new HashMap<>();
+        Map<String, JsonNode> desiredNode = new LinkedHashMap<>();
+        Map<String, String> desiredRepo = new HashMap<>();
+        Map<String, Set<String>> desiredLangs = new HashMap<>();
+        Map<String, Integer> byLangCount = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> me : DYN_REPOS.entrySet()) {
+          String lang = me.getKey();
+          int langCount = 0;
+          for (String repoUrl : me.getValue()) {
+            if (langCount >= maxPerLang || desiredNode.size() >= maxTotal) break;
+            List<JsonNode> list = fetchedCache.computeIfAbsent(repoUrl, Host::fetchRepoPluginList);
+            int repoSize = list.size();
+            for (JsonNode p : list) {
+              if (langCount >= maxPerLang || desiredNode.size() >= maxTotal) break;
+              String name = p.path("internalName").asText("").trim();
+              if (!isDynVodPlugin(p, name)) continue;
+              if (!langMatchesDyn(p.path("language").asText(""), lang, repoSize)) continue;
+              Entry existingCore = REG.get(name);
+              if (existingCore != null && "core".equals(existingCore.scope)) continue;
+              if (!desiredNode.containsKey(name)) {
+                desiredNode.put(name, p);
+                desiredRepo.put(name, repoUrl);
+                desiredLangs.put(name, new LinkedHashSet<>());
+              }
+              if (desiredLangs.get(name).add(lang)) langCount++;
+            }
+          }
+          byLangCount.put(lang, langCount);
+        }
+        int unloaded = 0;
+        for (String n : new ArrayList<>(REG.keySet())) {
+          Entry cur = REG.get(n);
+          if (cur != null && "dyn".equals(cur.scope) && !desiredNode.containsKey(n)) {
+            removeProviders(REG.remove(n));
+            unloaded++;
+          }
+        }
+        int loaded = 0, reused = 0, failed = 0;
+        for (Map.Entry<String, JsonNode> de : desiredNode.entrySet()) {
+          String name = de.getKey();
+          JsonNode p = de.getValue();
+          int status = p.path("status").asInt(1);
+          String hash = p.path("fileHash").asText("");
+          String url = p.path("url").asText("");
+          String cleanHash = hash.replace("sha256-", "");
+          String key = (name + "-" + cleanHash.substring(0, Math.min(10, cleanHash.length()))).replaceAll("[^A-Za-z0-9._-]", "_");
+          Entry old = REG.get(name);
+          Set<String> dLangs = desiredLangs.get(name);
+          String rUrl = desiredRepo.getOrDefault(name, "");
+          if (old != null && old.key.equals(key) && old.error == null) {
+            old.status = status;
+            old.repoUrl = rUrl;
+            old.dynLangs.clear();
+            if (dLangs != null) old.dynLangs.addAll(dLangs);
+            reused++;
+            continue;
+          }
+          try { loadPlugin(p, name, key, hash, url, status, old, "dyn", rUrl, dLangs); loaded++; }
+          catch (Throwable t) {
+            failed++;
+            log("dyn plugin " + name + " FAILED: " + t.getMessage());
+          }
+        }
+        int activeDyn = 0;
+        for (Entry e : REG.values()) if ("dyn".equals(e.scope) && e.error == null) activeDyn++;
+        lastDynSync = System.currentTimeMillis();
+        lastDynSyncNote = "loaded=" + loaded + " reused=" + reused + " unloaded=" + unloaded + " failed=" + failed + " activeDyn=" + activeDyn;
+        log("dyn-sync: " + lastDynSyncNote);
+        res.put("ok", true); res.put("loaded", loaded); res.put("reused", reused); res.put("unloaded", unloaded); res.put("failed", failed); res.put("activeDyn", activeDyn); res.put("byLang", byLangCount);
+        return res;
+      } catch (Throwable t) {
+        lastDynSyncNote = "error: " + t;
+        log("dyn-sync error: " + t);
+        res.put("ok", false); res.put("error", String.valueOf(t));
+        return res;
+      }
+    }
   }
 
   /** Repo URLs come from repos.txt (one per line, # = disabled) or BB_PLUGINS_URL. repo.json (pluginLists) and plugins.json arrays are both accepted. */
@@ -100,7 +266,7 @@ public class Host {
     return merged;
   }
 
-  static void loadPlugin(JsonNode p, String name, String key, String hash, String url, int status, Entry old) throws Exception {
+  static void loadPlugin(JsonNode p, String name, String key, String hash, String url, int status, Entry old, String scope, String repoUrl, Set<String> dynLangs) throws Exception {
     Path cs3 = CACHE.resolve(key + ".cs3"), jar = CACHE.resolve(key + ".jar");
     if (!Files.exists(jar)) {
       byte[] data = getBytes(url);
@@ -112,7 +278,8 @@ public class Host {
     }
     String pluginClass;
     try (ZipFile z = new ZipFile(cs3.toFile())) { pluginClass = MAPPER.readTree(z.getInputStream(z.getEntry("manifest.json"))).path("pluginClassName").asText(); }
-    Entry e = new Entry(); e.name = name; e.key = key; e.status = status; e.version = p.path("version").asText(); e.lang = p.path("language").asText(""); e.url = url;
+    Entry e = new Entry(); e.name = name; e.key = key; e.status = status; e.version = p.path("version").asText(); e.lang = p.path("language").asText(""); e.url = url; e.scope = scope != null ? scope : "core"; e.repoUrl = repoUrl != null ? repoUrl : "";
+    if (dynLangs != null) e.dynLangs.addAll(dynLangs);
     for (JsonNode t : p.path("tvTypes")) e.tvTypes.add(t.asText());
     synchronized (LOAD_LOCK) {
       URLClassLoader cl = new URLClassLoader(new URL[]{jar.toUri().toURL()}, Host.class.getClassLoader());
@@ -264,16 +431,41 @@ public class Host {
   static void handle(HttpExchange ex) throws IOException {
     try {
       URI u = ex.getRequestURI(); String path = u.getPath(); Map<String, String> q = query(u);
-      if (path.equals("/health")) { reply(ex, 200, "{\"plugins\":" + REG.size() + ",\"lastSync\":" + lastSync + ",\"note\":" + json(lastSyncNote) + "}"); return; }
+      if (path.equals("/health")) {
+        int dynCnt = 0; for (Entry e : REG.values()) if ("dyn".equals(e.scope) && e.error == null) dynCnt++;
+        reply(ex, 200, "{\"plugins\":" + REG.size() + ",\"dynPlugins\":" + dynCnt + ",\"lastSync\":" + lastSync + ",\"note\":" + json(lastSyncNote) + ",\"dynNote\":" + json(lastDynSyncNote) + "}"); return;
+      }
       if (path.equals("/providers")) {
         List<Object> out = new ArrayList<>();
         for (Entry e : REG.values()) for (Object p : e.providers) {
           Map<String, Object> m = new LinkedHashMap<>(); try { m.put("name", p.getClass().getMethod("getName").invoke(p)); m.put("mainUrl", p.getClass().getMethod("getMainUrl").invoke(p)); } catch (Throwable t) { continue; }
-          m.put("plugin", e.name); m.put("version", e.version); m.put("status", e.status); m.put("lang", e.lang); m.put("tvTypes", e.tvTypes); m.put("ok", e.ok.get()); m.put("fail", e.fail.get()); out.add(m);
+          m.put("plugin", e.name); m.put("version", e.version); m.put("status", e.status); m.put("lang", e.lang); m.put("tvTypes", e.tvTypes); m.put("scope", e.scope); m.put("repoUrl", e.repoUrl); m.put("dynLangs", new ArrayList<>(e.dynLangs)); m.put("ok", e.ok.get()); m.put("fail", e.fail.get()); out.add(m);
         }
         reply(ex, 200, json(out)); return;
       }
       if (path.equals("/sync")) { POOL.submit(Host::sync); reply(ex, 200, "{\"started\":true}"); return; }
+      if (path.equals("/dyn-sync") && "POST".equalsIgnoreCase(ex.getRequestMethod())) {
+        byte[] bodyBytes = ex.getRequestBody().readNBytes(131072);
+        JsonNode root = bodyBytes.length > 0 ? MAPPER.readTree(bodyBytes) : MAPPER.createObjectNode();
+        Map<String, List<String>> reqLangs = new LinkedHashMap<>();
+        JsonNode langsNode = root.path("langs");
+        if (langsNode.isObject()) {
+          Iterator<Map.Entry<String, JsonNode>> it = langsNode.fields();
+          while (it.hasNext()) {
+            Map.Entry<String, JsonNode> fe = it.next();
+            List<String> urls = new ArrayList<>();
+            if (fe.getValue().isArray()) for (JsonNode uNode : fe.getValue()) { String us = uNode.asText("").trim(); if (us.startsWith("http://") || us.startsWith("https://")) urls.add(us); }
+            if (!urls.isEmpty()) reqLangs.put(fe.getKey(), urls);
+          }
+        }
+        if ("1".equals(q.get("async"))) {
+          POOL.submit(() -> syncDynamic(reqLangs));
+          reply(ex, 200, "{\"ok\":true,\"started\":true}");
+        } else {
+          reply(ex, 200, json(syncDynamic(reqLangs)));
+        }
+        return;
+      }
       Object prov = findProvider(q.getOrDefault("p", "")); if (prov == null) { reply(ex, 404, "{\"error\":\"unknown provider\"}"); return; }
       Entry en = entryOf(prov);
       try {
@@ -293,7 +485,7 @@ public class Host {
     log("bigbull host on http://127.0.0.1:" + port);
     POOL.submit(Host::sync);
     ScheduledExecutorService sch = Executors.newSingleThreadScheduledExecutor(r -> { Thread t = new Thread(r, "bb-sync"); t.setDaemon(true); return t; });
-    sch.scheduleWithFixedDelay(Host::sync, SYNC_MS, SYNC_MS, TimeUnit.MILLISECONDS);
+    sch.scheduleWithFixedDelay(() -> { sync(); if (!DYN_REPOS.isEmpty()) syncDynamic(new LinkedHashMap<>(DYN_REPOS)); }, SYNC_MS, SYNC_MS, TimeUnit.MILLISECONDS);
   }
 }
 

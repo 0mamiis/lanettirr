@@ -14,7 +14,7 @@ async function call(path, ms) {
 let provCache = { t: 0, v: [] };
 export async function providers() {
   if (Date.now() - provCache.t < 60000 && provCache.v.length) return provCache.v;
-  const v = await call('/providers', 10000);
+  const v = (await call('/providers', 10000)).filter((p) => p && p.scope !== 'dyn');
   provCache = { t: Date.now(), v };
   return v;
 }

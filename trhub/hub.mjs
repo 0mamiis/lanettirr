@@ -105,7 +105,7 @@ function nuvioScrapers(st) {
 
 export async function listProviders(st) {
   const out = [];
-  try { const j = await (await fetch(CS_HOST + '/providers', { signal: AbortSignal.timeout(8000) })).json(); for (const p of j) if (p.status !== 0) out.push({ name: p.name, kind: 'cs3', lang: p.lang || '', ok: p.ok, fail: p.fail }); } catch {}
+  try { const j = await (await fetch(CS_HOST + '/providers', { signal: AbortSignal.timeout(8000) })).json(); for (const p of j) if (p.status !== 0 && p.scope !== 'dyn') out.push({ name: p.name, kind: 'cs3', lang: p.lang || '', ok: p.ok, fail: p.fail }); } catch {}
   for (const s of nuvioScrapers(st)) out.push({ name: s.name, kind: 'nuvio', lang: '', repo: s.repo });
   return out;
 }
