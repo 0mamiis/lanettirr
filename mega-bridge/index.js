@@ -226,6 +226,25 @@ function writeJsonAtomic(filePath, content) {
   }
 }
 let savedCfgMem = null;
+let autoUpdateMem = null;
+function loadAutoUpdatePref() {
+  if (autoUpdateMem !== null) return autoUpdateMem;
+  const envVal = String(process.env.AUTO_UPDATE || "").trim().toLowerCase();
+  if (envVal === "0" || envVal === "false" || envVal === "off") { autoUpdateMem = false; return false; }
+  try {
+    if (!fs.existsSync(SAVED_CFG_PATH)) { autoUpdateMem = true; return true; }
+    const j = JSON.parse(fs.readFileSync(SAVED_CFG_PATH, "utf8"));
+    autoUpdateMem = typeof j?.autoUpdate === "boolean" ? j.autoUpdate : true;
+    return autoUpdateMem;
+  } catch { autoUpdateMem = true; return true; }
+}
+function saveAutoUpdatePref(enabled) {
+  const val = Boolean(enabled);
+  const cfgStr = loadSavedConfigStr();
+  writeJsonAtomic(SAVED_CFG_PATH, JSON.stringify({ cfg: cfgStr, autoUpdate: val, updatedAt: Date.now() }, null, 2));
+  autoUpdateMem = val;
+  return val;
+}
 function loadSavedConfigStr() {
   if (savedCfgMem !== null) return savedCfgMem;
   try {
@@ -237,7 +256,7 @@ function loadSavedConfigStr() {
 }
 function saveConfigStr(cfgStr) {
   const clean = String(cfgStr || "").trim().slice(0, 65536);
-  writeJsonAtomic(SAVED_CFG_PATH, JSON.stringify({ cfg: clean, updatedAt: Date.now() }, null, 2));
+  writeJsonAtomic(SAVED_CFG_PATH, JSON.stringify({ cfg: clean, autoUpdate: loadAutoUpdatePref(), updatedAt: Date.now() }, null, 2));
   savedCfgMem = clean;
   return clean;
 }
@@ -4388,6 +4407,36 @@ function startSelfUpdate(targetVersion) {
     return { ok: false, status: 500, error: errObj.error, update: errObj };
   }
 }
+let autoUpdateInFlight = false;
+let lastAutoUpdateAttempt = { version: "", at: 0 };
+const AUTO_UPDATE_INTERVAL_MS = Math.max(5 * 60 * 1000, (parseInt(process.env.AUTO_UPDATE_INTERVAL_MIN || "30", 10) || 30) * 60 * 1000);
+async function runAutoUpdateCheck(reason) {
+  if (autoUpdateInFlight) return { skipped: "in_flight" };
+  if (!loadAutoUpdatePref()) return { skipped: "disabled" };
+  if (!resolveUpdaterScript()) return { skipped: "no_updater" };
+  if (readUpdateStatus().running) return { skipped: "already_running" };
+  autoUpdateInFlight = true;
+  try {
+    const info = await checkRemoteUpdate(true);
+    if (!info || !info.ok || !info.updateAvailable || !info.latestVersion) return { ok: true, updateAvailable: false };
+    if (lastAutoUpdateAttempt.version === info.latestVersion && (Date.now() - lastAutoUpdateAttempt.at) < 30 * 60 * 1000) {
+      return { skipped: "cooldown", version: info.latestVersion };
+    }
+    lastAutoUpdateAttempt = { version: info.latestVersion, at: Date.now() };
+    console.log(`[AUTO-UPDATE] v${info.currentVersion} -> v${info.latestVersion} (${reason || "timer"}), guncelleme baslatiliyor...`);
+    return startSelfUpdate(info.latestVersion);
+  } catch (e) {
+    return { ok: false, error: e && e.message ? String(e.message) : "auto_update_error" };
+  } finally {
+    autoUpdateInFlight = false;
+  }
+}
+function startAutoUpdateLoop() {
+  const t1 = setTimeout(() => { runAutoUpdateCheck("startup").catch(() => {}); }, 25 * 1000);
+  if (typeof t1.unref === "function") t1.unref();
+  const t2 = setInterval(() => { runAutoUpdateCheck("interval").catch(() => {}); }, AUTO_UPDATE_INTERVAL_MS);
+  if (typeof t2.unref === "function") t2.unref();
+}
 
 // ---- CloudStream 3 (.cs3) Self-Hosted Repository & Bridge ----
 const CS3_DEX_PATH = path.join(__dirname, "cs3", "classes.dex");
@@ -4681,11 +4730,22 @@ const server = http.createServer(async (req, res) => {
       force = (f === "1" || f === "true");
     } catch {}
     const info = await checkRemoteUpdate(force);
-    json(res, 200, info);
+    json(res, 200, Object.assign({}, info, { autoUpdate: loadAutoUpdatePref() }));
     return;
   }
   if (url === "/api/update/status" && req.method === "GET") {
-    json(res, 200, Object.assign({ ok: true, canSelfUpdate: Boolean(resolveUpdaterScript()) }, readUpdateStatus()));
+    json(res, 200, Object.assign({ ok: true, canSelfUpdate: Boolean(resolveUpdaterScript()), autoUpdate: loadAutoUpdatePref() }, readUpdateStatus()));
+    return;
+  }
+  if (url === "/api/update/auto" && req.method === "POST") {
+    let enabled = true;
+    try {
+      const p = await readJsonBody(req, 4096);
+      if (p && typeof p === "object" && typeof p.enabled === "boolean") enabled = p.enabled;
+    } catch {}
+    const saved = saveAutoUpdatePref(enabled);
+    if (saved) { setTimeout(() => { runAutoUpdateCheck("enabled").catch(() => {}); }, 300); }
+    json(res, 200, { ok: true, autoUpdate: saved });
     return;
   }
   if (url === "/api/update/start" && req.method === "POST") {
@@ -5163,6 +5223,7 @@ const onListen = async () => {
   const initCfg = parseConfig(loadSavedConfigStr());
   await ensureProviders({ needEn: (initCfg.langs || ["tr", "en"]).some(c => c !== "tr") });
   syncDynamicCs3(initCfg.langs, initCfg.disabledRepos, { async: true }).catch(() => {});
+  startAutoUpdateLoop();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`  ✅  Configure UI : http://${dispHost}:${PORT}/configure`);
   console.log(`  ✅  Nuvio Repo   : http://${dispHost}:${PORT}/saved/nuvio-repo/manifest.json`);

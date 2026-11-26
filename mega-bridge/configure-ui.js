@@ -263,6 +263,13 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.upd-btn-primary:disabled{opacity:.55;cursor:default}' +
     '.upd-btn-ghost{background:var(--surface-2);color:var(--fg);border-color:var(--border-strong)}' +
     '.upd-btn-ghost:hover{background:var(--surface-hover)}' +
+    '.upd-auto{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:11.5px;font-weight:600;color:var(--fg-muted);padding:3px 8px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface-2);transition:border-color .12s,color .12s}' +
+    '.upd-auto:hover{border-color:var(--primary);color:var(--fg)}' +
+    '.upd-auto .switch-track{width:28px;height:16px}' +
+    '.upd-auto .switch-thumb{width:10px;height:10px;top:2px;left:2px}' +
+    '.upd-auto input:checked + .switch-track .switch-thumb{transform:translateX(12px)}' +
+    'html[dir="rtl"] .upd-auto .switch-thumb{left:auto;right:2px}' +
+    'html[dir="rtl"] .upd-auto input:checked + .switch-track .switch-thumb{transform:translateX(-12px)}' +
     '.upd-track{width:100%;height:5px;background:var(--surface-2);border-radius:var(--r-pill);overflow:hidden;position:relative}' +
     '.upd-fill{height:100%;width:0%;border-radius:var(--r-pill);background:var(--primary);transition:width .35s ease}' +
     '.upd-bar.is-done .upd-fill{background:var(--ok)}' +
@@ -582,6 +589,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
             '<div class="upd-left"><span class="upd-dot"></span><span class="upd-msg" id="updMsg">' + esc(tr('updChecking')) + '</span></div>' +
             '<div class="upd-act">' +
               '<span class="upd-pct hidden" id="updPct">0%</span>' +
+              '<label class="upd-auto" id="updAutoWrap"><input class="sr" type="checkbox" id="updAutoToggle" checked /><span class="switch-track"><span class="switch-thumb"></span></span><span data-i18n="updAutoLabel">' + esc(tr('updAutoLabel')) + '</span></label>' +
               '<button type="button" class="link-btn hidden" id="updCheckBtn" data-i18n="updCheckBtn">' + esc(tr('updCheckBtn')) + '</button>' +
               '<button type="button" class="upd-btn upd-btn-primary hidden" id="updNowBtn" data-i18n="updNowBtn">' + esc(tr('updNowBtn')) + '</button>' +
               '<a class="upd-btn upd-btn-ghost hidden" id="updManualBtn" href="https://github.com/0mamiis/lanettirr" target="_blank" rel="noopener" data-i18n="updManualBtn">' + esc(tr('updManualBtn')) + '</a>' +
@@ -1761,9 +1769,10 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'const updNowBtn = document.getElementById("updNowBtn");' +
     'const updManualBtn = document.getElementById("updManualBtn");' +
     'const updReloadBtn = document.getElementById("updReloadBtn");' +
+    'const updAutoToggle = document.getElementById("updAutoToggle");' +
     'const updTrackEl = document.getElementById("updTrack");' +
     'const updFillEl = document.getElementById("updFill");' +
-    'const updState = { mode: "checking", currentVersion: APP_VERSION, latestVersion: null, canSelfUpdate: false, repoUrl: "https://github.com/0mamiis/lanettirr", stage: "idle", percent: 0, error: "", targetVersion: null };' +
+    'const updState = { mode: "checking", currentVersion: APP_VERSION, latestVersion: null, canSelfUpdate: false, autoUpdate: true, repoUrl: "https://github.com/0mamiis/lanettirr", stage: "idle", percent: 0, error: "", targetVersion: null };' +
     'let updPollTimer = null; let updReconnecting = false;' +
     'function updStageText(stage) {' +
     '  if (stage === "starting") return t("updStStarting");' +
@@ -1834,6 +1843,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    if (j.currentVersion) updState.currentVersion = j.currentVersion;' +
     '    if (j.latestVersion) updState.latestVersion = j.latestVersion;' +
     '    updState.canSelfUpdate = Boolean(j.canSelfUpdate);' +
+    '    if (typeof j.autoUpdate === "boolean") { updState.autoUpdate = j.autoUpdate; if (updAutoToggle) updAutoToggle.checked = j.autoUpdate; }' +
     '    if (j.repoUrl) updState.repoUrl = j.repoUrl;' +
     '    if (!j.ok) { updState.mode = "err"; updState.error = ""; }' +
     '    else if (j.updateAvailable) { updState.mode = "avail"; }' +
@@ -1868,6 +1878,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    if (j.currentVersion) updState.currentVersion = j.currentVersion;' +
     '    if (j.targetVersion) updState.targetVersion = j.targetVersion;' +
     '    if (typeof j.canSelfUpdate === "boolean") updState.canSelfUpdate = j.canSelfUpdate;' +
+    '    if (typeof j.autoUpdate === "boolean") { updState.autoUpdate = j.autoUpdate; if (updAutoToggle) updAutoToggle.checked = j.autoUpdate; }' +
     '    if (j.running) {' +
     '      updState.mode = "busy"; updState.stage = j.stage || "starting"; updState.percent = Math.max(updState.percent, Number(j.percent) || 5);' +
     '      renderUpdateBar();' +
@@ -1902,6 +1913,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'if (updCheckBtn) updCheckBtn.addEventListener("click", () => checkForUpdateUi(true));' +
     'if (updNowBtn) updNowBtn.addEventListener("click", startUpdateUi);' +
     'if (updReloadBtn) updReloadBtn.addEventListener("click", () => window.location.reload());' +
+    'if (updAutoToggle) updAutoToggle.addEventListener("change", async () => { const next = updAutoToggle.checked; updAutoToggle.disabled = true; try { const r = await fetch(ORIGIN + "/api/update/auto", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: next }) }); const j = await r.json(); if (r.ok && typeof j.autoUpdate === "boolean") { updState.autoUpdate = j.autoUpdate; updAutoToggle.checked = j.autoUpdate; } else { updAutoToggle.checked = !next; } } catch { updAutoToggle.checked = !next; } finally { updAutoToggle.disabled = false; } });' +
     'const themeBtn = document.getElementById("themeBtn");' +
     'function applyTheme(pref) {' +
     '  themePref = (pref === "dark" || pref === "light") ? pref : "auto";' +
