@@ -33,6 +33,20 @@ Repository: https://github.com/0mamiis/lanettirr
 2. **Run setup**: Double-click `kur.bat`. Node.js, Java 21, FFmpeg/`ffprobe`, required npm packages, and `cs-host-deps.zip` are installed automatically.
 3. **Start services**: Run `baslat.bat` and wait until all services report ready (`HAZIR`).
 
+## 1-Command Installation (Android / Termux)
+
+Install [Termux](https://f-droid.org/packages/com.termux/) from F-Droid (and optionally [Termux:Widget](https://f-droid.org/packages/com.termux.widget/) for home-screen buttons), open Termux, and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/0mamiis/lanettirr/main/termux-install.sh | bash
+```
+
+This single command automatically:
+- Installs Node.js, OpenJDK 21, FFmpeg, Git, Curl, and Unzip in Termux.
+- Clones Lanettirr into `~/lanettirr`, installs npm dependencies, and sets up `cs-host-deps.zip`.
+- Creates 1-tap **Termux:Widget** home-screen shortcuts (`Lanettirr-Start`, `Lanettirr-Stop`, `Lanettirr-Config`, `Lanettirr-Update`) and CLI commands (`lanettirr-start`, `lanettirr-stop`, `lanettirr-config`, `lanettirr-update`).
+- Starts all services on `127.0.0.1:3001` so you can add the local URLs directly in **Nuvio**, **CloudStream (CS3)**, or **Stremio** on the same phone.
+
 ## Nuvio Desktop Setup
 
 ### 1. Configuration Panel (Recommended First Step)

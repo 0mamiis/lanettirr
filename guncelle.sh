@@ -144,7 +144,9 @@ else
       mkdir -p "$ROOT/$(dirname "$clean")"
       cp -f "$SRC_ROOT/$clean" "$ROOT/$clean"
     done
-    if [ -f "$ROOT/guncelle.sh" ]; then chmod +x "$ROOT/guncelle.sh"; fi
+    for sf in guncelle.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
+      if [ -f "$ROOT/$sf" ]; then chmod +x "$ROOT/$sf"; fi
+    done
   fi
 fi
 
