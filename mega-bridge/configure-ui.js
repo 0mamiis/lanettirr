@@ -373,6 +373,15 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.bl-sub{font-size:11px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
     '.bl-del{height:26px;padding:0 10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font:inherit;font-size:11px;cursor:pointer;flex-shrink:0}' +
     '.bl-del:hover{border-color:#f31260;color:#f31260}' +
+    '.don-desc{font-size:12px;color:var(--fg-muted);margin:0 0 10px}' +
+    '.don-list{display:flex;flex-direction:column;gap:8px}' +
+    '.don-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);background:var(--surface-2)}' +
+    '.don-meta{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}' +
+    '.don-net{font-size:11px;font-weight:600;color:var(--fg);letter-spacing:.02em}' +
+    '.don-addr{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:var(--code-fg);word-break:break-all;user-select:all}' +
+    '.don-copy{height:28px;padding:0 11px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font:inherit;font-size:11px;font-weight:500;cursor:pointer;flex-shrink:0;transition:border-color .12s,color .12s}' +
+    '.don-copy:hover{border-color:var(--primary);color:var(--primary)}' +
+    '.don-status{font-size:11px;color:var(--ok);font-weight:500;min-height:14px}' +
     '.hidden{display:none!important}' +
     '@media (max-width:640px){.hdr{flex-direction:column;align-items:flex-start}.ctrl-row{flex-direction:column;align-items:flex-start}.status{margin-inline-start:0;width:100%}.qual-grid,.qlim-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.field-grid{grid-template-columns:1fr}}' +
     '</style></head><body><main class="shell">' +
@@ -623,6 +632,25 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
             '<span id="stremioBtnLbl" data-i18n="stremioBtn">' + esc(tr('stremioBtn')) + '</span>' +
           '</a>' +
           '<span class="status" id="status"></span>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="panel">' +
+      '<div class="panel-head">' +
+        '<span class="panel-title" data-i18n="secDonate">' + esc(tr('secDonate')) + '</span>' +
+        '<span class="don-status" id="donStatus"></span>' +
+      '</div>' +
+      '<div class="panel-body">' +
+        '<p class="don-desc" data-i18n="donateDesc">' + esc(tr('donateDesc')) + '</p>' +
+        '<div class="don-list">' +
+          '<div class="don-item">' +
+            '<div class="don-meta"><span class="don-net">USDT · X Layer</span><span class="don-addr">XKOde2f6fbcdace36d5ceebdf545e992d3036269259</span></div>' +
+            '<button type="button" class="don-copy" data-don-addr="XKOde2f6fbcdace36d5ceebdf545e992d3036269259" data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</button>' +
+          '</div>' +
+          '<div class="don-item">' +
+            '<div class="don-meta"><span class="don-net">USDT · Tron (TRC20)</span><span class="don-addr">TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA</span></div>' +
+            '<button type="button" class="don-copy" data-don-addr="TNxCAUc1EJvRvAmEAVK5iAKrJBXp6MuJsA" data-i18n="copyBtn">' + esc(tr('copyBtn')) + '</button>' +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</section>' +
@@ -1202,6 +1230,17 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  try { await navigator.clipboard.writeText(out.textContent); setStatus(linkMode === "saved" ? t("stSavedCopied") : t("stCopied"), 2500, false); }' +
     '  catch { setStatus(t("stSelectCopy"), 3000, false); }' +
     '});' +
+    'let donTimer = null;' +
+    'document.querySelectorAll(".don-copy[data-don-addr]").forEach(btn => btn.addEventListener("click", async () => {' +
+    '  const addr = btn.dataset.donAddr || "";' +
+    '  const ds = document.getElementById("donStatus");' +
+    '  try {' +
+    '    await navigator.clipboard.writeText(addr);' +
+    '    if (ds) { ds.textContent = t("donateCopied"); clearTimeout(donTimer); donTimer = setTimeout(() => { ds.textContent = ""; }, 2500); }' +
+    '  } catch {' +
+    '    if (ds) { ds.textContent = t("stSelectCopy"); clearTimeout(donTimer); donTimer = setTimeout(() => { ds.textContent = ""; }, 3000); }' +
+    '  }' +
+    '}));' +
     'if (uiLangSel) uiLangSel.addEventListener("change", () => { applyUiLang(uiLangSel.value, true); saveUiPrefs(); });' +
     'try {' +
     '  const uiRaw = localStorage.getItem(UI_PREFS_KEY);' +
