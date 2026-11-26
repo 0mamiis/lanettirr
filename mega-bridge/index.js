@@ -558,14 +558,15 @@ async function getRequestedTitle(tmdbId, mediaType) {
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
     for (const key of TMDB_KEYS) {
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${encodeURIComponent(tmdbId)}?api_key=${key}`, { signal: AbortSignal.timeout(5000) });
+        const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${encodeURIComponent(tmdbId)}?api_key=${key}&append_to_response=external_ids`, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) continue;
         const json = await res.json();
         const title = json.name || json.title || json.original_name || json.original_title || null;
         const isAnimation = Array.isArray(json.genres) ? json.genres.some(g => g && (g.id === 16 || /anim/i.test(String(g.name || '')))) : null;
         const originalLang = json.original_language ? String(json.original_language).toLowerCase() : null;
+        const imdbId = (json.imdb_id || json.external_ids?.imdb_id || '').trim() || null;
         if (title) {
-          titleCache.set(cacheKey, { title, isAnimation, originalLang, at: Date.now(), ttl: 60 * 60 * 1000 });
+          titleCache.set(cacheKey, { title, isAnimation, originalLang, imdbId, at: Date.now(), ttl: 60 * 60 * 1000 });
           capMap(titleCache, 500);
           return title;
         }
@@ -587,18 +588,20 @@ async function getTmdbInfo(tmdbId, mediaType) {
     if (/^tt\d+$/i.test(String(tmdbId || ''))) {
       const resolved = await resolveImdbToTmdb(tmdbId, mediaType);
       const info = resolved
-        ? { tmdbId: resolved.tmdbId, title: resolved.title, mediaType: resolved.mediaType, isAnimation: resolved.isAnimation, originalLang: resolved.originalLang ?? null }
-        : { tmdbId: String(tmdbId), title: null, mediaType, isAnimation: null, originalLang: null };
+        ? { tmdbId: resolved.tmdbId, imdbId: String(tmdbId), title: resolved.title, mediaType: resolved.mediaType, isAnimation: resolved.isAnimation, originalLang: resolved.originalLang ?? null }
+        : { tmdbId: String(tmdbId), imdbId: String(tmdbId), title: null, mediaType, isAnimation: null, originalLang: null };
       infoCache.set(cacheKey, { info, at: Date.now(), ttl: resolved ? (60 * 60 * 1000) : 30000 });
       capMap(infoCache, 500);
       return info;
     }
     const primary = await getRequestedTitle(tmdbId, mediaType);
-    let info = { tmdbId: String(tmdbId), title: primary, mediaType, isAnimation: titleCache.get(`${mediaType}:${tmdbId}`)?.isAnimation ?? null, originalLang: titleCache.get(`${mediaType}:${tmdbId}`)?.originalLang ?? null };
+    const primEntry = titleCache.get(`${mediaType}:${tmdbId}`);
+    let info = { tmdbId: String(tmdbId), imdbId: primEntry?.imdbId ?? null, title: primary, mediaType, isAnimation: primEntry?.isAnimation ?? null, originalLang: primEntry?.originalLang ?? null };
     if (!primary) {
       const otherType = mediaType === 'tv' ? 'movie' : 'tv';
       const other = await getRequestedTitle(tmdbId, otherType);
-      info = { tmdbId: String(tmdbId), title: other || null, mediaType: other ? otherType : mediaType, isAnimation: titleCache.get(`${otherType}:${tmdbId}`)?.isAnimation ?? null, originalLang: titleCache.get(`${otherType}:${tmdbId}`)?.originalLang ?? null };
+      const othEntry = titleCache.get(`${otherType}:${tmdbId}`);
+      info = { tmdbId: String(tmdbId), imdbId: othEntry?.imdbId ?? null, title: other || null, mediaType: other ? otherType : mediaType, isAnimation: othEntry?.isAnimation ?? null, originalLang: othEntry?.originalLang ?? null };
     }
     infoCache.set(cacheKey, { info, at: Date.now(), ttl: info.title ? (60 * 60 * 1000) : 20000 });
     capMap(infoCache, 500);
@@ -1131,10 +1134,15 @@ async function loadAll() {
     _repoIds: new Set(['tr_trhub']),
     getStreams: async (tmdbId, mediaType, season, episode, reqOpts = {}) => {
       try {
+        const startAt = Date.now();
         const signal = reqOpts?.signal || null;
         const trTimeout = Number.isFinite(reqOpts?.timeoutMs) && reqOpts.timeoutMs > 0 ? Math.max(10000, reqOpts.timeoutMs) : 34000;
+        const rawMs = Number.isFinite(reqOpts?.rawTimeoutMs) && reqOpts.rawTimeoutMs > 0 ? reqOpts.rawTimeoutMs : trTimeout;
+        const isOnlyTr = !!reqOpts?.isOnlyTrHub;
         const kind = mediaType === 'tv' || mediaType === 'series' ? 'tv' : 'movie';
-        let imdb = /^tt\d+$/i.test(String(tmdbId || '')) ? String(tmdbId) : trHubImdbCache.get(kind + ':' + tmdbId);
+        let imdb = /^tt\d+$/i.test(String(tmdbId || ''))
+          ? String(tmdbId)
+          : (/^tt\d+$/i.test(String(reqOpts?.imdbId || '')) ? String(reqOpts.imdbId) : trHubImdbCache.get(kind + ':' + tmdbId));
         if (!imdb) {
           for (const key of TMDB_KEYS.filter(Boolean)) {
             if (signal && signal.aborted) return [];
@@ -1148,7 +1156,13 @@ async function loadAll() {
         if (!imdb || (signal && signal.aborted)) return [];
         const stType = kind === 'tv' ? 'series' : 'movie';
         const stId = stType === 'series' ? `${imdb}:${season || 1}:${episode || 1}` : imdb;
-        const txt = await httpGet(`${HUB_URL}/g/tr/stream/${stType}/${encodeURIComponent(stId)}.json`, {}, trTimeout, 0, { signal });
+        const remMs = Math.max(4000, trTimeout - (Date.now() - startAt));
+        const softWait = isOnlyTr
+          ? Math.min(Math.max(rawMs, 13000), Math.max(6000, remMs - 6000))
+          : Math.max(4000, Math.min(remMs - 2500, 12000));
+        const hardWait = Math.max(softWait, Math.min(remMs - 3000, softWait + 7000));
+        const reqTimeout = Math.max(4000, remMs - 500);
+        const txt = await httpGet(`${HUB_URL}/g/tr/stream/${stType}/${encodeURIComponent(stId)}.json?wait=${Math.round(softWait)}&hard=${Math.round(hardWait)}`, {}, reqTimeout, 0, { signal });
         const j = safeJson(txt);
         return ((j && j.streams) || []).map((s) => {
           if (!s || !s.url) return null;
@@ -1165,7 +1179,10 @@ async function loadAll() {
           const title = String(s.title || '').replace(/\r?\n/g, ' · ');
           return { name: s.name || 'TR Hub', title, url: u, headers, _fromTrHub: true };
         }).filter(Boolean);
-      } catch { return []; }
+      } catch (e) {
+        console.error('[TR Hub] getStreams failed:', e && e.message ? e.message : e);
+        return [];
+      }
     },
   });
 
@@ -2363,19 +2380,27 @@ async function enrichAndApplyStreamControls(list, cfg, isTv, hubCtx = null) {
       }
     }
   }
-  await Promise.allSettled(toProbe.slice(0, 28).map(async (s) => {
-    const m = await probeOneStreamMetric(s, isTv);
-    s._kbps = m.kbps;
-    s._latencyMs = m.latencyMs;
-    if (m.needsProxy) s._needsProxy = true;
-    if (m.res) applyVerifiedResolution(s, m.res);
-    if (m.mediaMeta) s._mediaMeta = mergeMediaMeta(s._mediaMeta, m.mediaMeta);
-    if (Array.isArray(m.audioLangs) && m.audioLangs.length) {
-      s._audioLangs = m.audioLangs;
-      if (hubCtx?.mediaKey) recordCrossHubAudio(hubCtx.mediaKey, s, m.audioLangs);
-    }
-    if (Array.isArray(m.subLangs) && m.subLangs.length) s._subLangs = m.subLangs;
-  }));
+  {
+    let metricTimer;
+    try {
+      await Promise.race([
+        Promise.allSettled(toProbe.slice(0, 28).map(async (s) => {
+          const m = await probeOneStreamMetric(s, isTv);
+          s._kbps = m.kbps;
+          s._latencyMs = m.latencyMs;
+          if (m.needsProxy) s._needsProxy = true;
+          if (m.res) applyVerifiedResolution(s, m.res);
+          if (m.mediaMeta) s._mediaMeta = mergeMediaMeta(s._mediaMeta, m.mediaMeta);
+          if (Array.isArray(m.audioLangs) && m.audioLangs.length) {
+            s._audioLangs = m.audioLangs;
+            if (hubCtx?.mediaKey) recordCrossHubAudio(hubCtx.mediaKey, s, m.audioLangs);
+          }
+          if (Array.isArray(m.subLangs) && m.subLangs.length) s._subLangs = m.subLangs;
+        })),
+        new Promise(r => { metricTimer = setTimeout(r, 5500); }),
+      ]);
+    } finally { clearTimeout(metricTimer); }
+  }
   sortStreamsForCfg(filtered, cfg);
   const ffCand = [];
   const ffBuckets = Object.create(null);
@@ -2387,17 +2412,23 @@ async function enrichAndApplyStreamControls(list, cfg, isTv, hubCtx = null) {
     if (ffCand.length >= 12) break;
   }
   if (ffCand.length) {
-    await Promise.allSettled(ffCand.map(async (s) => {
-      const info = await probeStreamVideoInfo(s);
-      if (info.res) applyVerifiedResolution(s, info.res);
-      if (info.kbps && info.kbps > 0) s._kbps = info.kbps;
-      if (info.mediaMeta) s._mediaMeta = mergeMediaMeta(s._mediaMeta, info.mediaMeta);
-      if (Array.isArray(info.audioLangs) && info.audioLangs.length) {
-        s._audioLangs = info.audioLangs;
-        if (hubCtx?.mediaKey) recordCrossHubAudio(hubCtx.mediaKey, s, info.audioLangs);
-      }
-      if (Array.isArray(info.subLangs) && info.subLangs.length) s._subLangs = info.subLangs;
-    }));
+    let ffTimer;
+    try {
+      await Promise.race([
+        Promise.allSettled(ffCand.map(async (s) => {
+          const info = await probeStreamVideoInfo(s);
+          if (info.res) applyVerifiedResolution(s, info.res);
+          if (info.kbps && info.kbps > 0) s._kbps = info.kbps;
+          if (info.mediaMeta) s._mediaMeta = mergeMediaMeta(s._mediaMeta, info.mediaMeta);
+          if (Array.isArray(info.audioLangs) && info.audioLangs.length) {
+            s._audioLangs = info.audioLangs;
+            if (hubCtx?.mediaKey) recordCrossHubAudio(hubCtx.mediaKey, s, info.audioLangs);
+          }
+          if (Array.isArray(info.subLangs) && info.subLangs.length) s._subLangs = info.subLangs;
+        })),
+        new Promise(r => { ffTimer = setTimeout(r, 6500); }),
+      ]);
+    } finally { clearTimeout(ffTimer); }
   }
   const verified = filtered.filter(s => {
     const r = s._realRes || detectResolution(s.name) || detectResolution(s.title);
@@ -2772,7 +2803,7 @@ async function getStreams(type, id, langs = ["tr", "en"], timeoutSec = 45, disab
   });
   const rawTimeoutMs = Math.max(10000, Math.min(90000, (parseInt(timeoutSec, 10) || 45) * 1000));
   const isOnlyTrHub = activeProviders.length === 1 && activeProviders[0].meta?.id === "trhub";
-  const baseTimeoutMs = isOnlyTrHub ? Math.max(rawTimeoutMs, 24000) : rawTimeoutMs;
+  const baseTimeoutMs = isOnlyTrHub ? Math.max(rawTimeoutMs, 26000) : rawTimeoutMs;
   console.log(`🔍  ${mediaType} | ${tmdbId} | S${season??'-'}E${episode??'-'} | [${langs.join(",")}] | ${activeProviders.length} providers | to=${Math.round(baseTimeoutMs/1000)}s`);
 
   const results = await new Promise((resolveAll) => {
@@ -2797,7 +2828,7 @@ async function getStreams(type, id, langs = ["tr", "en"], timeoutSec = 45, disab
       }
       const cbId = String(p.meta?.id || p.meta?.name || '').toLowerCase();
       const provId = (p.meta?.id === 'trhub' && /^tt\d+$/i.test(String(tmdbId || ''))) ? tmdbId : effectiveTmdbId;
-      Promise.resolve().then(() => p.getStreams(provId, effectiveType, effectiveType === 'tv' ? season : null, effectiveType === 'tv' ? episode : null, { timeoutMs: baseTimeoutMs, signal: ac.signal }))
+      Promise.resolve().then(() => p.getStreams(provId, effectiveType, effectiveType === 'tv' ? season : null, effectiveType === 'tv' ? episode : null, { timeoutMs: baseTimeoutMs, rawTimeoutMs, isOnlyTrHub, imdbId: info.imdbId || null, signal: ac.signal }))
         .then(val => {
           recordProviderSuccess(cbId);
           if (settled) return;
@@ -3781,7 +3812,7 @@ function waitHubTurn(gate, slug, order) {
       if (idx !== -1) gate.waiters.splice(idx, 1);
       res();
     };
-    const tm = setTimeout(finish, Math.min(6000, myIdx * 2500));
+    const tm = setTimeout(finish, Math.min(18000, myIdx * 10000));
     const remGrace = graceRemaining();
     if (remGrace > 0) graceTm = setTimeout(check, remGrace + 10);
     gate.waiters.push(check);
@@ -3842,6 +3873,206 @@ function readJsonBody(req, maxBytes = 65536) {
   });
 }
 
+const UPDATE_REPO = (process.env.LANETTIRR_UPDATE_REPO || "0mamiis/lanettirr").trim();
+const UPDATE_BRANCH = (process.env.LANETTIRR_UPDATE_BRANCH || "main").trim();
+const UPDATE_CHECK_TTL = 15 * 60 * 1000;
+let updateCheckCache = null;
+
+function getLocalVersion() {
+  const candidates = [path.join(__dirname, "VERSION"), path.join(__dirname, "..", "VERSION")];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, "utf8").trim().replace(/^v/i, "");
+        if (raw) return raw;
+      }
+    } catch {}
+  }
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8"));
+    if (pkg && pkg.version) return String(pkg.version).trim().replace(/^v/i, "");
+  } catch {}
+  return "1.2.0";
+}
+
+function compareSemver(a, b) {
+  const parse = (v) => String(v || "").trim().replace(/^v/i, "").split("-")[0].split(".").map(n => parseInt(n, 10) || 0);
+  const pa = parse(a);
+  const pb = parse(b);
+  const len = Math.max(pa.length, pb.length, 3);
+  for (let i = 0; i < len; i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function resolveUpdaterScript() {
+  const custom = (process.env.LANETTIRR_UPDATER || "").trim();
+  if (custom && fs.existsSync(custom)) {
+    const type = custom.toLowerCase().endsWith(".ps1") ? "ps1" : "sh";
+    return { type, scriptPath: custom, rootDir: path.dirname(custom) };
+  }
+  if (process.platform === "win32") {
+    const cands = [
+      { scriptPath: path.join(__dirname, "..", "scripts", "update.ps1"), rootDir: path.join(__dirname, "..") },
+      { scriptPath: path.join(__dirname, "scripts", "update.ps1"), rootDir: __dirname },
+    ];
+    for (const c of cands) {
+      if (fs.existsSync(c.scriptPath)) return { type: "ps1", scriptPath: c.scriptPath, rootDir: c.rootDir };
+    }
+  } else {
+    const cands = [
+      { scriptPath: path.join(__dirname, "..", "guncelle.sh"), rootDir: path.join(__dirname, "..") },
+      { scriptPath: path.join(__dirname, "guncelle.sh"), rootDir: __dirname },
+    ];
+    for (const c of cands) {
+      if (fs.existsSync(c.scriptPath)) return { type: "sh", scriptPath: c.scriptPath, rootDir: c.rootDir };
+    }
+  }
+  return null;
+}
+
+function getUpdateStatusFile() {
+  if (process.env.NUVIO_DATA_DIR) return path.join(DATA_DIR, "update-status.json");
+  const upd = resolveUpdaterScript();
+  if (upd) return path.join(upd.rootDir, ".runtime", "update-status.json");
+  return path.join(DATA_DIR, "update-status.json");
+}
+
+function writeUpdateStatusFile(obj) {
+  const file = getUpdateStatusFile();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = file + ".tmp." + process.pid + "." + Date.now();
+  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2), "utf8");
+  fs.renameSync(tmp, file);
+}
+
+function readUpdateStatus() {
+  const curVer = getLocalVersion();
+  const fallback = { running: false, stage: "idle", percent: 0, message: "", done: false, error: null, currentVersion: curVer, targetVersion: null, startedAt: null, updatedAt: null };
+  try {
+    const file = getUpdateStatusFile();
+    if (!fs.existsSync(file)) return fallback;
+    const raw = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (!raw || typeof raw !== "object") return fallback;
+    const out = Object.assign({}, fallback, raw);
+    out.currentVersion = curVer;
+    if (out.running && out.updatedAt) {
+      const age = Date.now() - Date.parse(out.updatedAt);
+      if (Number.isFinite(age) && age > 10 * 60 * 1000) {
+        out.running = false;
+        out.stage = "error";
+        out.error = "Update timed out";
+      }
+    }
+    return out;
+  } catch {
+    return fallback;
+  }
+}
+
+async function checkRemoteUpdate(force = false) {
+  const currentVersion = getLocalVersion();
+  const canSelfUpdate = Boolean(resolveUpdaterScript());
+  const repoUrl = "https://github.com/" + UPDATE_REPO;
+  if (!force && updateCheckCache && (Date.now() - updateCheckCache.at < UPDATE_CHECK_TTL)) {
+    const cached = Object.assign({}, updateCheckCache.data, {
+      currentVersion,
+      canSelfUpdate,
+      updateAvailable: updateCheckCache.data.latestVersion ? compareSemver(updateCheckCache.data.latestVersion, currentVersion) > 0 : false,
+      cached: true,
+    });
+    return cached;
+  }
+  try {
+    const verUrl = `https://raw.githubusercontent.com/${UPDATE_REPO}/${UPDATE_BRANCH}/VERSION?t=${Date.now()}`;
+    const res = await fetch(verUrl, {
+      signal: AbortSignal.timeout(8000),
+      headers: { "User-Agent": "Lanettirr-Bridge/" + currentVersion, "Cache-Control": "no-cache" },
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const latestVersion = (await res.text()).trim().replace(/^v/i, "");
+    if (!/^d+.d+(?:.d+)?/.test(latestVersion)) throw new Error("Invalid remote VERSION");
+    const data = {
+      ok: true,
+      currentVersion,
+      latestVersion,
+      updateAvailable: compareSemver(latestVersion, currentVersion) > 0,
+      canSelfUpdate,
+      repoUrl,
+      checkedAt: new Date().toISOString(),
+      cached: false,
+      error: null,
+    };
+    updateCheckCache = { at: Date.now(), data };
+    return data;
+  } catch (e) {
+    return {
+      ok: false,
+      currentVersion,
+      latestVersion: null,
+      updateAvailable: false,
+      canSelfUpdate,
+      repoUrl,
+      checkedAt: new Date().toISOString(),
+      cached: false,
+      error: (e && e.message) ? String(e.message) : "network_error",
+    };
+  }
+}
+
+function startSelfUpdate(targetVersion) {
+  const cur = readUpdateStatus();
+  if (cur.running) return { ok: false, status: 409, error: "already_running", update: cur };
+  const upd = resolveUpdaterScript();
+  if (!upd) return { ok: false, status: 400, error: "updater_not_found" };
+  const statusFile = getUpdateStatusFile();
+  const curVer = getLocalVersion();
+  const cleanTarget = String(targetVersion || "").trim().replace(/^v/i, "");
+  const now = new Date().toISOString();
+  const initStatus = {
+    running: true,
+    stage: "starting",
+    percent: 5,
+    message: "Starting update...",
+    done: false,
+    error: null,
+    currentVersion: curVer,
+    targetVersion: cleanTarget || null,
+    startedAt: now,
+    updatedAt: now,
+  };
+  writeUpdateStatusFile(initStatus);
+  updateCheckCache = null;
+  const { spawn } = require("child_process");
+  let cmd, args;
+  if (upd.type === "ps1") {
+    const sysPs = path.join(process.env.WINDIR || "C:\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    cmd = fs.existsSync(sysPs) ? sysPs : "powershell.exe";
+    args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", upd.scriptPath, "-FromUi", "-StatusFile", statusFile, "-Repo", UPDATE_REPO, "-Branch", UPDATE_BRANCH];
+    if (cleanTarget) args.push("-TargetVersion", cleanTarget);
+  } else {
+    cmd = "bash";
+    args = [upd.scriptPath, "--from-ui", "--status-file", statusFile, "--repo", UPDATE_REPO, "--branch", UPDATE_BRANCH];
+    if (cleanTarget) args.push("--target-version", cleanTarget);
+  }
+  try {
+    const child = spawn(cmd, args, { cwd: upd.rootDir, detached: true, stdio: "ignore", windowsHide: true });
+    child.on("error", (err) => {
+      try {
+        writeUpdateStatusFile(Object.assign({}, initStatus, { running: false, stage: "error", error: String(err && err.message ? err.message : err), updatedAt: new Date().toISOString() }));
+      } catch {}
+    });
+    child.unref();
+    return { ok: true, status: 200, started: true, update: initStatus };
+  } catch (err) {
+    const errObj = Object.assign({}, initStatus, { running: false, stage: "error", error: String(err && err.message ? err.message : err), updatedAt: new Date().toISOString() });
+    try { writeUpdateStatusFile(errObj); } catch {}
+    return { ok: false, status: 500, error: errObj.error, update: errObj };
+  }
+}
+
 const server = http.createServer(async (req, res) => {
  try {
   if (req.method === 'OPTIONS') {
@@ -3852,7 +4083,7 @@ const server = http.createServer(async (req, res) => {
 
   const url = req.url.split('?')[0];
   if (url === '/health' && (req.method === 'GET' || req.method === 'HEAD')) {
-    json(res, 200, { ok: true, uptimeSec: Math.round(process.uptime()), providersLoaded: Array.isArray(providers) ? providers.length : 0, port: PORT });
+    json(res, 200, { ok: true, version: getLocalVersion(), uptimeSec: Math.round(process.uptime()), providersLoaded: Array.isArray(providers) ? providers.length : 0, port: PORT });
     return;
   }
   if (url === '/badges.json' && (req.method === 'GET' || req.method === 'HEAD')) {
@@ -3920,6 +4151,30 @@ const server = http.createServer(async (req, res) => {
   }
   if (url === "/api/blacklist/clear" && req.method === "POST") {
     json(res, 200, { ok: true, items: clearBlacklist() });
+    return;
+  }
+  if (url === "/api/update/check" && req.method === "GET") {
+    let force = false;
+    try {
+      const f = new URL(req.url, origin).searchParams.get("force");
+      force = (f === "1" || f === "true");
+    } catch {}
+    const info = await checkRemoteUpdate(force);
+    json(res, 200, info);
+    return;
+  }
+  if (url === "/api/update/status" && req.method === "GET") {
+    json(res, 200, Object.assign({ ok: true, canSelfUpdate: Boolean(resolveUpdaterScript()) }, readUpdateStatus()));
+    return;
+  }
+  if (url === "/api/update/start" && req.method === "POST") {
+    let targetVersion = "";
+    try {
+      const p = await readJsonBody(req, 8192);
+      if (p && typeof p === "object" && typeof p.targetVersion === "string") targetVersion = p.targetVersion;
+    } catch {}
+    const r = startSelfUpdate(targetVersion);
+    json(res, r.status || 200, r);
     return;
   }
   const playM = url.match(/^\/play\/([a-z0-9_]+)\/(\d+)\/s\.(m3u8|mp4)$/i);
@@ -3991,6 +4246,7 @@ const server = http.createServer(async (req, res) => {
       hasUrlCfg: Boolean(cfgRaw),
       acceptLanguage: String(req.headers["accept-language"] || ""),
       uiLang: qUiLang,
+      appVersion: getLocalVersion(),
     });
     const etag = 'W/"' + crypto.createHash("sha1").update(html).digest("hex") + '"';
     const baseHdrs = {

@@ -100,6 +100,7 @@ const BASE_I18N = {
     saveBtn: 'Ayarları Kaydet', copyBtn: 'Linki Kopyala', stremioBtn: 'Stremio / AIOStreams’de Aç',
     stSaved: 'Kaydedildi · Nuvio’da ↻ Yenile’ye bas', stSaveErr: 'Kaydetme hatası',
     stSavedCopied: 'Kaydedildi ve kopyalandı', stCopied: 'Kopyalandı', stSelectCopy: 'Linki seçip kopyala',
+    updChecking: "Güncelleme kontrol ediliyor...", updUpToDate: "Güncel", updAvailable: "Yeni sürüm mevcut: v{cur} → v{new}", updCheckBtn: "Kontrol Et", updNowBtn: "Güncelle", updManualBtn: "İndir", updRetryBtn: "Tekrar Dene", updReloadBtn: "Yenile", updCheckErr: "Güncelleme kontrol edilemedi", updStStarting: "Güncelleme başlatılıyor...", updStBackup: "Ayarlar yedekleniyor...", updStDownload: "Güncelleme indiriliyor...", updStExtract: "Dosyalar uygulanıyor...", updStInstall: "Paketler güncelleniyor...", updStRestart: "Servisler yeniden başlatılıyor...", updStDone: "v{ver} sürümüne güncellendi", updStErr: "Güncelleme başarısız",
   },
   en: {
     uiLangLabel: 'Interface language', uiLangAuto: 'Auto (Browser)',
@@ -149,6 +150,7 @@ const BASE_I18N = {
     saveBtn: 'Save Settings', copyBtn: 'Copy Link', stremioBtn: 'Open in Stremio / AIOStreams',
     stSaved: 'Saved · Press ↻ Refresh in Nuvio', stSaveErr: 'Save failed',
     stSavedCopied: 'Saved and copied', stCopied: 'Copied', stSelectCopy: 'Select and copy the link',
+    updChecking: "Checking for updates...", updUpToDate: "Up to date", updAvailable: "Update available: v{cur} → v{new}", updCheckBtn: "Check", updNowBtn: "Update", updManualBtn: "Download", updRetryBtn: "Retry", updReloadBtn: "Reload", updCheckErr: "Could not check for updates", updStStarting: "Starting update...", updStBackup: "Backing up settings...", updStDownload: "Downloading update...", updStExtract: "Applying files...", updStInstall: "Updating dependencies...", updStRestart: "Restarting services...", updStDone: "Updated to v{ver}", updStErr: "Update failed",
   },
   es: {
     uiLangLabel: 'Idioma de la interfaz', uiLangAuto: 'Automático (Navegador)',
@@ -198,6 +200,7 @@ const BASE_I18N = {
     saveBtn: 'Guardar ajustes', copyBtn: 'Copiar enlace', stremioBtn: 'Abrir en Stremio / AIOStreams',
     stSaved: 'Guardado · Pulsa ↻ Actualizar en Nuvio', stSaveErr: 'Error al guardar',
     stSavedCopied: 'Guardado y copiado', stCopied: 'Copiado', stSelectCopy: 'Selecciona y copia el enlace',
+    updChecking: "Buscando actualizaciones...", updUpToDate: "Actualizado", updAvailable: "Actualización disponible: v{cur} → v{new}", updCheckBtn: "Comprobar", updNowBtn: "Actualizar", updManualBtn: "Descargar", updRetryBtn: "Reintentar", updReloadBtn: "Recargar", updCheckErr: "No se pudo comprobar actualizaciones", updStStarting: "Iniciando actualización...", updStBackup: "Respaldando ajustes...", updStDownload: "Descargando actualización...", updStExtract: "Aplicando archivos...", updStInstall: "Actualizando paquetes...", updStRestart: "Reiniciando servicios...", updStDone: "Actualizado a v{ver}", updStErr: "Error al actualizar",
   },
   pt: {
     uiLangLabel: 'Idioma da interface', uiLangAuto: 'Automático (Navegador)',
@@ -247,6 +250,7 @@ const BASE_I18N = {
     saveBtn: 'Guardar definições', copyBtn: 'Copiar ligação', stremioBtn: 'Abrir no Stremio / AIOStreams',
     stSaved: 'Guardado · Prima ↻ Atualizar no Nuvio', stSaveErr: 'Erro ao guardar',
     stSavedCopied: 'Guardado e copiado', stCopied: 'Copiado', stSelectCopy: 'Selecione e copie a ligação',
+    updChecking: "Verificando atualizações...", updUpToDate: "Atualizado", updAvailable: "Atualização disponível: v{cur} → v{new}", updCheckBtn: "Verificar", updNowBtn: "Atualizar", updManualBtn: "Baixar", updRetryBtn: "Tentar novamente", updReloadBtn: "Recarregar", updCheckErr: "Não foi possível verificar atualizações", updStStarting: "Iniciando atualização...", updStBackup: "Salvando configurações...", updStDownload: "Baixando atualização...", updStExtract: "Aplicando arquivos...", updStInstall: "Atualizando pacotes...", updStRestart: "Reiniciando serviços...", updStDone: "Atualizado para v{ver}", updStErr: "Falha na atualização",
   },
   fr: {
     uiLangLabel: 'Langue de l’interface', uiLangAuto: 'Automatique (Navigateur)',
@@ -296,6 +300,7 @@ const BASE_I18N = {
     saveBtn: 'Enregistrer', copyBtn: 'Copier le lien', stremioBtn: 'Ouvrir dans Stremio / AIOStreams',
     stSaved: 'Enregistré · Cliquez sur ↻ Actualiser dans Nuvio', stSaveErr: 'Échec de l’enregistrement',
     stSavedCopied: 'Enregistré et copié', stCopied: 'Copié', stSelectCopy: 'Sélectionnez et copiez le lien',
+    updChecking: "Recherche de mises à jour...", updUpToDate: "À jour", updAvailable: "Mise à jour disponible : v{cur} → v{new}", updCheckBtn: "Vérifier", updNowBtn: "Mettre à jour", updManualBtn: "Télécharger", updRetryBtn: "Réessayer", updReloadBtn: "Recharger", updCheckErr: "Impossible de vérifier les mises à jour", updStStarting: "Démarrage de la mise à jour...", updStBackup: "Sauvegarde des paramètres...", updStDownload: "Téléchargement de la mise à jour...", updStExtract: "Application des fichiers...", updStInstall: "Mise à jour des dépendances...", updStRestart: "Redémarrage des services...", updStDone: "Mis à jour vers v{ver}", updStErr: "Échec de la mise à jour",
   },
   de: {
     uiLangLabel: 'Oberflächensprache', uiLangAuto: 'Automatisch (Browser)',
@@ -345,6 +350,7 @@ const BASE_I18N = {
     saveBtn: 'Einstellungen speichern', copyBtn: 'Link kopieren', stremioBtn: 'In Stremio / AIOStreams öffnen',
     stSaved: 'Gespeichert · In Nuvio auf ↻ Aktualisieren tippen', stSaveErr: 'Speichern fehlgeschlagen',
     stSavedCopied: 'Gespeichert und kopiert', stCopied: 'Kopiert', stSelectCopy: 'Link markieren und kopieren',
+    updChecking: "Suche nach Updates...", updUpToDate: "Aktuell", updAvailable: "Update verfügbar: v{cur} → v{new}", updCheckBtn: "Prüfen", updNowBtn: "Aktualisieren", updManualBtn: "Herunterladen", updRetryBtn: "Erneut versuchen", updReloadBtn: "Neu laden", updCheckErr: "Update-Prüfung fehlgeschlagen", updStStarting: "Update wird gestartet...", updStBackup: "Einstellungen werden gesichert...", updStDownload: "Update wird heruntergeladen...", updStExtract: "Dateien werden angewendet...", updStInstall: "Pakete werden aktualisiert...", updStRestart: "Dienste werden neu gestartet...", updStDone: "Auf v{ver} aktualisiert", updStErr: "Update fehlgeschlagen",
   },
   it: {
     uiLangLabel: 'Lingua interfaccia', uiLangAuto: 'Automatico (Browser)',
@@ -394,6 +400,7 @@ const BASE_I18N = {
     saveBtn: 'Salva impostazioni', copyBtn: 'Copia link', stremioBtn: 'Apri in Stremio / AIOStreams',
     stSaved: 'Salvato · Premi ↻ Aggiorna in Nuvio', stSaveErr: 'Errore salvataggio',
     stSavedCopied: 'Salvato e copiato', stCopied: 'Copiato', stSelectCopy: 'Seleziona e copia il link',
+    updChecking: "Controllo aggiornamenti...", updUpToDate: "Aggiornato", updAvailable: "Aggiornamento disponibile: v{cur} → v{new}", updCheckBtn: "Controlla", updNowBtn: "Aggiorna", updManualBtn: "Scarica", updRetryBtn: "Riprova", updReloadBtn: "Ricarica", updCheckErr: "Impossibile controllare aggiornamenti", updStStarting: "Avvio aggiornamento...", updStBackup: "Backup impostazioni...", updStDownload: "Download aggiornamento...", updStExtract: "Applicazione file...", updStInstall: "Aggiornamento pacchetti...", updStRestart: "Riavvio servizi...", updStDone: "Aggiornato a v{ver}", updStErr: "Aggiornamento non riuscito",
   },
   ru: {
     uiLangLabel: 'Язык интерфейса', uiLangAuto: 'Авто (Браузер)',
@@ -443,6 +450,7 @@ const BASE_I18N = {
     saveBtn: 'Сохранить настройки', copyBtn: 'Копировать ссылку', stremioBtn: 'Открыть в Stremio / AIOStreams',
     stSaved: 'Сохранено · Нажмите ↻ Обновить в Nuvio', stSaveErr: 'Ошибка сохранения',
     stSavedCopied: 'Сохранено и скопировано', stCopied: 'Скопировано', stSelectCopy: 'Выделите и скопируйте ссылку',
+    updChecking: "Проверка обновлений...", updUpToDate: "Актуальная версия", updAvailable: "Доступно обновление: v{cur} → v{new}", updCheckBtn: "Проверить", updNowBtn: "Обновить", updManualBtn: "Скачать", updRetryBtn: "Повторить", updReloadBtn: "Обновить стр.", updCheckErr: "Не удалось проверить обновления", updStStarting: "Запуск обновления...", updStBackup: "Резервное копирование настроек...", updStDownload: "Загрузка обновления...", updStExtract: "Применение файлов...", updStInstall: "Обновление пакетов...", updStRestart: "Перезапуск служб...", updStDone: "Обновлено до v{ver}", updStErr: "Ошибка обновления",
   },
   uk: {
     uiLangLabel: 'Мова інтерфейсу', uiLangAuto: 'Авто (Браузер)',
@@ -492,6 +500,7 @@ const BASE_I18N = {
     saveBtn: 'Зберегти налаштування', copyBtn: 'Копіювати посилання', stremioBtn: 'Відкрити в Stremio / AIOStreams',
     stSaved: 'Збережено · Натисніть ↻ Оновити в Nuvio', stSaveErr: 'Помилка збереження',
     stSavedCopied: 'Збережено та скопійовано', stCopied: 'Скопійовано', stSelectCopy: 'Виділіть і скопіюйте посилання',
+    updChecking: "Перевірка оновлень...", updUpToDate: "Актуальна версія", updAvailable: "Доступне оновлення: v{cur} → v{new}", updCheckBtn: "Перевірити", updNowBtn: "Оновити", updManualBtn: "Завантажити", updRetryBtn: "Повторити", updReloadBtn: "Оновити стор.", updCheckErr: "Не вдалося перевірити оновлення", updStStarting: "Запуск оновлення...", updStBackup: "Резервне копіювання налаштувань...", updStDownload: "Завантаження оновлення...", updStExtract: "Застосування файлів...", updStInstall: "Оновлення пакетів...", updStRestart: "Перезапуск служб...", updStDone: "Оновлено до v{ver}", updStErr: "Помилка оновлення",
   },
   pl: {
     uiLangLabel: 'Język interfejsu', uiLangAuto: 'Automatyczny (Przeglądarka)',
@@ -541,6 +550,7 @@ const BASE_I18N = {
     saveBtn: 'Zapisz ustawienia', copyBtn: 'Kopiuj link', stremioBtn: 'Otwórz w Stremio / AIOStreams',
     stSaved: 'Zapisano · Kliknij ↻ Odśwież w Nuvio', stSaveErr: 'Błąd zapisu',
     stSavedCopied: 'Zapisano i skopiowano', stCopied: 'Skopiowano', stSelectCopy: 'Zaznacz i skopiuj link',
+    updChecking: "Sprawdzanie aktualizacji...", updUpToDate: "Aktualna wersja", updAvailable: "Dostępna aktualizacja: v{cur} → v{new}", updCheckBtn: "Sprawdź", updNowBtn: "Aktualizuj", updManualBtn: "Pobierz", updRetryBtn: "Ponów", updReloadBtn: "Odśwież", updCheckErr: "Nie udało się sprawdzić aktualizacji", updStStarting: "Uruchamianie aktualizacji...", updStBackup: "Kopia zapasowa ustawień...", updStDownload: "Pobieranie aktualizacji...", updStExtract: "Zastosowywanie plików...", updStInstall: "Aktualizowanie pakietów...", updStRestart: "Restartowanie usług...", updStDone: "Zaktualizowano do v{ver}", updStErr: "Aktualizacja nie powiodła się",
   },
   hu: {
     uiLangLabel: 'Felület nyelve', uiLangAuto: 'Automatikus (Böngésző)',
@@ -590,6 +600,7 @@ const BASE_I18N = {
     saveBtn: 'Beállítások mentése', copyBtn: 'Link másolása', stremioBtn: 'Megnyitás Stremio / AIOStreams-ben',
     stSaved: 'Mentve · Nyomd meg a ↻ Frissítést a Nuvióban', stSaveErr: 'Mentési hiba',
     stSavedCopied: 'Mentve és másolva', stCopied: 'Másolva', stSelectCopy: 'Jelöld ki és másold a linket',
+    updChecking: "Frissítések keresése...", updUpToDate: "Naprakész", updAvailable: "Frissítés elérhető: v{cur} → v{new}", updCheckBtn: "Ellenőrzés", updNowBtn: "Frissítés", updManualBtn: "Letöltés", updRetryBtn: "Újra", updReloadBtn: "Újratöltés", updCheckErr: "Nem sikerült ellenőrizni a frissítéseket", updStStarting: "Frissítés indítása...", updStBackup: "Beállítások mentése...", updStDownload: "Frissítés letöltése...", updStExtract: "Fájlok alkalmazása...", updStInstall: "Csomagok frissítése...", updStRestart: "Szolgáltatások újraindítása...", updStDone: "Frissítve: v{ver}", updStErr: "Frissítés sikertelen",
   },
   ro: {
     uiLangLabel: 'Limba interfeței', uiLangAuto: 'Automat (Browser)',
@@ -639,6 +650,7 @@ const BASE_I18N = {
     saveBtn: 'Salvează setările', copyBtn: 'Copiază linkul', stremioBtn: 'Deschide în Stremio / AIOStreams',
     stSaved: 'Salvat · Apasă ↻ Reîmprospătează în Nuvio', stSaveErr: 'Eroare la salvare',
     stSavedCopied: 'Salvat și copiat', stCopied: 'Copiat', stSelectCopy: 'Selectează și copiază linkul',
+    updChecking: "Se verifică actualizările...", updUpToDate: "Actualizat", updAvailable: "Actualizare disponibilă: v{cur} → v{new}", updCheckBtn: "Verifică", updNowBtn: "Actualizează", updManualBtn: "Descarcă", updRetryBtn: "Reîncearcă", updReloadBtn: "Reîncarcă", updCheckErr: "Nu s-au putut verifica actualizările", updStStarting: "Se pornește actualizarea...", updStBackup: "Se salvează setările...", updStDownload: "Se descarcă actualizarea...", updStExtract: "Se aplică fișierele...", updStInstall: "Se actualizează pachetele...", updStRestart: "Se repornesc serviciile...", updStDone: "Actualizat la v{ver}", updStErr: "Actualizare eșuată",
   },
   cs: {
     uiLangLabel: 'Jazyk rozhraní', uiLangAuto: 'Automaticky (Prohlížeč)',
@@ -688,6 +700,7 @@ const BASE_I18N = {
     saveBtn: 'Uložit nastavení', copyBtn: 'Kopírovat odkaz', stremioBtn: 'Otevřít ve Stremio / AIOStreams',
     stSaved: 'Uloženo · Klikněte na ↻ Obnovit v Nuvio', stSaveErr: 'Chyba ukládání',
     stSavedCopied: 'Uloženo a zkopírováno', stCopied: 'Zkopírováno', stSelectCopy: 'Označte a zkopírujte odkaz',
+    updChecking: "Kontrola aktualizací...", updUpToDate: "Aktuální", updAvailable: "Dostupná aktualizace: v{cur} → v{new}", updCheckBtn: "Zkontrolovat", updNowBtn: "Aktualizovat", updManualBtn: "Stáhnout", updRetryBtn: "Zkusit znovu", updReloadBtn: "Obnovit", updCheckErr: "Nepodařilo se zkontrolovat aktualizace", updStStarting: "Spouštění aktualizace...", updStBackup: "Zálohování nastavení...", updStDownload: "Stahování aktualizace...", updStExtract: "Používání souborů...", updStInstall: "Aktualizace balíčků...", updStRestart: "Restartování služeb...", updStDone: "Aktualizováno na v{ver}", updStErr: "Aktualizace selhala",
   },
   nl: {
     uiLangLabel: 'Interfacetaal', uiLangAuto: 'Automatisch (Browser)',
@@ -737,6 +750,7 @@ const BASE_I18N = {
     saveBtn: 'Instellingen opslaan', copyBtn: 'Link kopiëren', stremioBtn: 'Openen in Stremio / AIOStreams',
     stSaved: 'Opgeslagen · Klik op ↻ Vernieuwen in Nuvio', stSaveErr: 'Opslaan mislukt',
     stSavedCopied: 'Opgeslagen en gekopieerd', stCopied: 'Gekopieerd', stSelectCopy: 'Selecteer en kopieer de link',
+    updChecking: "Controleren op updates...", updUpToDate: "Up-to-date", updAvailable: "Update beschikbaar: v{cur} → v{new}", updCheckBtn: "Controleren", updNowBtn: "Bijwerken", updManualBtn: "Downloaden", updRetryBtn: "Opnieuw", updReloadBtn: "Herladen", updCheckErr: "Kan updates niet controleren", updStStarting: "Update starten...", updStBackup: "Instellingen back-uppen...", updStDownload: "Update downloaden...", updStExtract: "Bestanden toepassen...", updStInstall: "Pakketten bijwerken...", updStRestart: "Services herstarten...", updStDone: "Bijgewerkt naar v{ver}", updStErr: "Update mislukt",
   },
   sv: {
     uiLangLabel: 'Gränssnittsspråk', uiLangAuto: 'Automatiskt (Webbläsare)',
@@ -786,6 +800,7 @@ const BASE_I18N = {
     saveBtn: 'Spara inställningar', copyBtn: 'Kopiera länk', stremioBtn: 'Öppna i Stremio / AIOStreams',
     stSaved: 'Sparat · Tryck på ↻ Uppdatera i Nuvio', stSaveErr: 'Kunde inte spara',
     stSavedCopied: 'Sparat och kopierat', stCopied: 'Kopierat', stSelectCopy: 'Markera och kopiera länken',
+    updChecking: "Söker efter uppdateringar...", updUpToDate: "Uppdaterad", updAvailable: "Uppdatering tillgänglig: v{cur} → v{new}", updCheckBtn: "Kontrollera", updNowBtn: "Uppdatera", updManualBtn: "Ladda ner", updRetryBtn: "Försök igen", updReloadBtn: "Ladda om", updCheckErr: "Kunde inte söka efter uppdateringar", updStStarting: "Startar uppdatering...", updStBackup: "Säkerhetskopierar inställningar...", updStDownload: "Laddar ner uppdatering...", updStExtract: "Tillämpar filer...", updStInstall: "Uppdaterar paket...", updStRestart: "Startar om tjänster...", updStDone: "Uppdaterad till v{ver}", updStErr: "Uppdatering misslyckades",
   },
   no: {
     uiLangLabel: 'Grensesnittspråk', uiLangAuto: 'Automatisk (Nettleser)',
@@ -835,6 +850,7 @@ const BASE_I18N = {
     saveBtn: 'Lagre innstillinger', copyBtn: 'Kopier lenke', stremioBtn: 'Åpne i Stremio / AIOStreams',
     stSaved: 'Lagret · Trykk ↻ Oppdater i Nuvio', stSaveErr: 'Lagring mislyktes',
     stSavedCopied: 'Lagret og kopiert', stCopied: 'Kopiert', stSelectCopy: 'Merk og kopier lenken',
+    updChecking: "Ser etter oppdateringer...", updUpToDate: "Oppdatert", updAvailable: "Oppdatering tilgjengelig: v{cur} → v{new}", updCheckBtn: "Sjekk", updNowBtn: "Oppdater", updManualBtn: "Last ned", updRetryBtn: "Prøv igjen", updReloadBtn: "Last inn på nytt", updCheckErr: "Kunne ikke se etter oppdateringer", updStStarting: "Starter oppdatering...", updStBackup: "Sikkerhetskopierer innstillinger...", updStDownload: "Laster ned oppdatering...", updStExtract: "Bruker filer...", updStInstall: "Oppdaterer pakker...", updStRestart: "Starter tjenester på nytt...", updStDone: "Oppdatert til v{ver}", updStErr: "Oppdatering mislyktes",
   },
   da: {
     uiLangLabel: 'Grænsefladesprog', uiLangAuto: 'Automatisk (Browser)',
@@ -884,6 +900,7 @@ const BASE_I18N = {
     saveBtn: 'Gem indstillinger', copyBtn: 'Kopiér link', stremioBtn: 'Åbn i Stremio / AIOStreams',
     stSaved: 'Gemt · Tryk på ↻ Opdatér i Nuvio', stSaveErr: 'Gemning mislykkedes',
     stSavedCopied: 'Gemt og kopieret', stCopied: 'Kopieret', stSelectCopy: 'Markér og kopiér linket',
+    updChecking: "Søger efter opdateringer...", updUpToDate: "Opdateret", updAvailable: "Opdatering tilgængelig: v{cur} → v{new}", updCheckBtn: "Tjek", updNowBtn: "Opdater", updManualBtn: "Download", updRetryBtn: "Prøv igen", updReloadBtn: "Genindlæs", updCheckErr: "Kunne ikke tjekke opdateringer", updStStarting: "Starter opdatering...", updStBackup: "Sikkerhedskopierer indstillinger...", updStDownload: "Downloader opdatering...", updStExtract: "Anvender filer...", updStInstall: "Opdaterer pakker...", updStRestart: "Genstarter tjenester...", updStDone: "Opdateret til v{ver}", updStErr: "Opdatering mislykkedes",
   },
   fi: {
     uiLangLabel: 'Käyttöliittymän kieli', uiLangAuto: 'Automaattinen (Selain)',
@@ -933,6 +950,7 @@ const BASE_I18N = {
     saveBtn: 'Tallenna asetukset', copyBtn: 'Kopioi linkki', stremioBtn: 'Avaa Stremiossa / AIOStreamsissa',
     stSaved: 'Tallennettu · Paina ↻ Päivitä Nuviossa', stSaveErr: 'Tallennus epäonnistui',
     stSavedCopied: 'Tallennettu ja kopioitu', stCopied: 'Kopioitu', stSelectCopy: 'Valitse ja kopioi linkki',
+    updChecking: "Tarkistetaan päivityksiä...", updUpToDate: "Ajan tasalla", updAvailable: "Päivitys saatavilla: v{cur} → v{new}", updCheckBtn: "Tarkista", updNowBtn: "Päivitä", updManualBtn: "Lataa", updRetryBtn: "Yritä uudelleen", updReloadBtn: "Lataa uudelleen", updCheckErr: "Päivitysten tarkistus epäonnistui", updStStarting: "Aloitetaan päivitys...", updStBackup: "Varmuuskopioidaan asetuksia...", updStDownload: "Ladataan päivitystä...", updStExtract: "Otetaan tiedostoja käyttöön...", updStInstall: "Päivitetään paketteja...", updStRestart: "Käynnistetään palvelut uudelleen...", updStDone: "Päivitetty versioon v{ver}", updStErr: "Päivitys epäonnistui",
   },
   el: {
     uiLangLabel: 'Γλώσσα διεπαφής', uiLangAuto: 'Αυτόματο (Πρόγραμμα περιήγησης)',
@@ -982,6 +1000,7 @@ const BASE_I18N = {
     saveBtn: 'Αποθήκευση ρυθμίσεων', copyBtn: 'Αντιγραφή συνδέσμου', stremioBtn: 'Άνοιγμα σε Stremio / AIOStreams',
     stSaved: 'Αποθηκεύτηκε · Πατήστε ↻ Ανανέωση στο Nuvio', stSaveErr: 'Σφάλμα αποθήκευσης',
     stSavedCopied: 'Αποθηκεύτηκε και αντιγράφηκε', stCopied: 'Αντιγράφηκε', stSelectCopy: 'Επιλέξτε και αντιγράψτε τον σύνδεσμο',
+    updChecking: "Έλεγχος για ενημερώσεις...", updUpToDate: "Ενημερωμένο", updAvailable: "Διαθέσιμη ενημέρωση: v{cur} → v{new}", updCheckBtn: "Έλεγχος", updNowBtn: "Ενημέρωση", updManualBtn: "Λήψη", updRetryBtn: "Δοκιμή ξανά", updReloadBtn: "Ανανέωση", updCheckErr: "Αδυναμία ελέγχου ενημερώσεων", updStStarting: "Έναρξη ενημέρωσης...", updStBackup: "Αντίγραφο ρυθμίσεων...", updStDownload: "Λήψη ενημέρωσης...", updStExtract: "Εφαρμογή αρχείων...", updStInstall: "Ενημέρωση πακέτων...", updStRestart: "Επανεκκίνηση υπηρεσιών...", updStDone: "Ενημερώθηκε σε v{ver}", updStErr: "Η ενημέρωση απέτυχε",
   },
   // __PART2_MARKER__
   ar: {
@@ -1032,6 +1051,7 @@ const BASE_I18N = {
     saveBtn: 'حفظ الإعدادات', copyBtn: 'نسخ الرابط', stremioBtn: 'فتح في Stremio / AIOStreams',
     stSaved: 'تم الحفظ · اضغط ↻ تحديث في Nuvio', stSaveErr: 'فشل الحفظ',
     stSavedCopied: 'تم الحفظ والنسخ', stCopied: 'تم النسخ', stSelectCopy: 'حدّد الرابط وانسخه',
+    updChecking: "جارٍ التحقق من التحديثات...", updUpToDate: "محدّث", updAvailable: "تحديث متاح: v{cur} → v{new}", updCheckBtn: "تحقق", updNowBtn: "تحديث", updManualBtn: "تنزيل", updRetryBtn: "إعادة المحاولة", updReloadBtn: "إعادة التحميل", updCheckErr: "تعذر التحقق من التحديثات", updStStarting: "بدء التحديث...", updStBackup: "نسخ الإعدادات احتياطياً...", updStDownload: "تنزيل التحديث...", updStExtract: "تطبيق الملفات...", updStInstall: "تحديث الحزم...", updStRestart: "إعادة تشغيل الخدمات...", updStDone: "تم التحديث إلى v{ver}", updStErr: "فشل التحديث",
   },
   fa: {
     uiLangLabel: 'زبان رابط کاربری', uiLangAuto: 'خودکار (مرورگر)',
@@ -1081,6 +1101,7 @@ const BASE_I18N = {
     saveBtn: 'ذخیره تنظیمات', copyBtn: 'کپی لینک', stremioBtn: 'باز کردن در Stremio / AIOStreams',
     stSaved: 'ذخیره شد · در Nuvio روی ↻ بازآوری بزنید', stSaveErr: 'خطا در ذخیره',
     stSavedCopied: 'ذخیره و کپی شد', stCopied: 'کپی شد', stSelectCopy: 'لینک را انتخاب و کپی کنید',
+    updChecking: "در حال بررسی به‌روزرسانی...", updUpToDate: "به‌روز است", updAvailable: "نسخه جدید موجود است: v{cur} → v{new}", updCheckBtn: "بررسی", updNowBtn: "به‌روزرسانی", updManualBtn: "دانلود", updRetryBtn: "تلاش مجدد", updReloadBtn: "بارگذاری مجدد", updCheckErr: "بررسی به‌روزرسانی ناموفق بود", updStStarting: "شروع به‌روزرسانی...", updStBackup: "پشتیبان‌گیری از تنظیمات...", updStDownload: "دانلود به‌روزرسانی...", updStExtract: "اعمال فایل‌ها...", updStInstall: "به‌روزرسانی بسته‌ها...", updStRestart: "راه‌اندازی مجدد سرویس‌ها...", updStDone: "به نسخه v{ver} به‌روز شد", updStErr: "به‌روزرسانی ناموفق بود",
   },
   ur: {
     uiLangLabel: 'انٹرفیس زبان', uiLangAuto: 'خودکار (براؤزر)',
@@ -1130,6 +1151,7 @@ const BASE_I18N = {
     saveBtn: 'ترتیبات محفوظ کریں', copyBtn: 'لنک کاپی کریں', stremioBtn: 'Stremio / AIOStreams میں کھولیں',
     stSaved: 'محفوظ ہو گیا · Nuvio میں ↻ تازہ کریں دبائیں', stSaveErr: 'محفوظ کرنے میں خرابی',
     stSavedCopied: 'محفوظ اور کاپی ہو گیا', stCopied: 'کاپی ہو گیا', stSelectCopy: 'لنک منتخب کر کے کاپی کریں',
+    updChecking: "اپ ڈیٹس چیک کی جا رہی ہیں...", updUpToDate: "اپ ٹو ڈیٹ", updAvailable: "نئی اپ ڈیٹ دستیاب ہے: v{cur} → v{new}", updCheckBtn: "چیک کریں", updNowBtn: "اپ ڈیٹ کریں", updManualBtn: "ڈاؤن لوڈ", updRetryBtn: "دوبارہ کوشش کریں", updReloadBtn: "ری لوڈ کریں", updCheckErr: "اپ ڈیٹ چیک نہیں ہو سکی", updStStarting: "اپ ڈیٹ شروع ہو رہی ہے...", updStBackup: "ترتیبات محفوظ ہو رہی ہیں...", updStDownload: "اپ ڈیٹ ڈاؤن لوڈ ہو رہی ہے...", updStExtract: "فائلیں لاگو ہو رہی ہیں...", updStInstall: "پیکجز اپ ڈیٹ ہو رہے ہیں...", updStRestart: "سروسز دوبارہ شروع ہو رہی ہیں...", updStDone: "v{ver} پر اپ ڈیٹ ہو گیا", updStErr: "اپ ڈیٹ ناکام ہوگئی",
   },
   hi: {
     uiLangLabel: 'इंटरफ़ेस भाषा', uiLangAuto: 'स्वतः (ब्राउज़र)',
@@ -1179,6 +1201,7 @@ const BASE_I18N = {
     saveBtn: 'सेटिंग्स सहेजें', copyBtn: 'लिंक कॉपी करें', stremioBtn: 'Stremio / AIOStreams में खोलें',
     stSaved: 'सहेजा गया · Nuvio में ↻ रीफ़्रेश दबाएँ', stSaveErr: 'सहेजने में त्रुटि',
     stSavedCopied: 'सहेजा और कॉपी किया गया', stCopied: 'कॉपी किया गया', stSelectCopy: 'लिंक चुनकर कॉपी करें',
+    updChecking: "अपडेट जाँचे जा रहे हैं...", updUpToDate: "अप टू डेट", updAvailable: "नया अपडेट उपलब्ध: v{cur} → v{new}", updCheckBtn: "जाँचें", updNowBtn: "अपडेट करें", updManualBtn: "डाउनलोड", updRetryBtn: "पुनः प्रयास", updReloadBtn: "रीलोड", updCheckErr: "अपडेट जाँचा नहीं जा सका", updStStarting: "अपडेट शुरू हो रहा है...", updStBackup: "सेटिंग्स का बैकअप हो रहा है...", updStDownload: "अपडेट डाउनलोड हो रहा है...", updStExtract: "फ़ाइलें लागू हो रही हैं...", updStInstall: "पैकेज अपडेट हो रहे हैं...", updStRestart: "सेवाएँ पुनः शुरू हो रही हैं...", updStDone: "v{ver} पर अपडेट हो गया", updStErr: "अपडेट विफल रहा",
   },
   ta: {
     uiLangLabel: 'இடைமுக மொழி', uiLangAuto: 'தானியங்கி (உலாவி)',
@@ -1228,6 +1251,7 @@ const BASE_I18N = {
     saveBtn: 'அமைப்புகளை சேமி', copyBtn: 'இணைப்பை நகலெடு', stremioBtn: 'Stremio / AIOStreams இல் திற',
     stSaved: 'சேமிக்கப்பட்டது · Nuvio இல் ↻ புதுப்பி அழுத்தவும்', stSaveErr: 'சேமிப்பு தோல்வி',
     stSavedCopied: 'சேமிக்கப்பட்டு நகலெடுக்கப்பட்டது', stCopied: 'நகலெடுக்கப்பட்டது', stSelectCopy: 'இணைப்பை தேர்ந்து நகலெடுக்கவும்',
+    updChecking: "புதுப்பிப்புகள் சரிபார்க்கப்படுகின்றன...", updUpToDate: "புதுப்பித்த நிலையில் உள்ளது", updAvailable: "புதிய பதிப்பு உள்ளது: v{cur} → v{new}", updCheckBtn: "சரிபார்", updNowBtn: "புதுப்பி", updManualBtn: "பதிவிறக்கு", updRetryBtn: "மீண்டும் முயற்சி", updReloadBtn: "மறுஏற்று", updCheckErr: "புதுப்பிப்புகளை சரிபார்க்க முடியவில்லை", updStStarting: "புதுப்பிப்பு தொடங்குகிறது...", updStBackup: "அமைப்புகள் காப்பு எடுக்கப்படுகின்றன...", updStDownload: "புதுப்பிப்பு பதிவிறக்கப்படுகிறது...", updStExtract: "கோப்புகள் பயன்படுத்தப்படுகின்றன...", updStInstall: "தொகுப்புகள் புதுப்பிக்கப்படுகின்றன...", updStRestart: "சேவைகள் மறுதொடக்கம் செய்யப்படுகின்றன...", updStDone: "v{ver} க்கு புதுப்பிக்கப்பட்டது", updStErr: "புதுப்பிப்பு தோல்வியடைந்தது",
   },
   te: {
     uiLangLabel: 'ఇంటర్‌ఫేస్ భాష', uiLangAuto: 'ఆటోమేటిక్ (బ్రౌజర్)',
@@ -1277,6 +1301,7 @@ const BASE_I18N = {
     saveBtn: 'సెట్టింగ్స్ సేవ్ చేయండి', copyBtn: 'లింక్ కాపీ చేయండి', stremioBtn: 'Stremio / AIOStreams లో తెరవండి',
     stSaved: 'సేవ్ అయింది · Nuvio లో ↻ రిఫ్రెష్ నొక్కండి', stSaveErr: 'సేవ్ విఫలమైంది',
     stSavedCopied: 'సేవ్ అయి కాపీ చేయబడింది', stCopied: 'కాపీ చేయబడింది', stSelectCopy: 'లింక్ ఎంచుకుని కాపీ చేయండి',
+    updChecking: "నవీకరణలు తనిఖీ చేస్తోంది...", updUpToDate: "తాజా వెర్షన్", updAvailable: "నవీకరణ అందుబాటులో ఉంది: v{cur} → v{new}", updCheckBtn: "తనిఖీ", updNowBtn: "నవీకరించు", updManualBtn: "డౌన్‌లోడ్", updRetryBtn: "మళ్లీ ప్రయత్నించు", updReloadBtn: "రీలోడ్", updCheckErr: "నవీకరణలను తనిఖీ చేయలేకపోయింది", updStStarting: "నవీకరణ ప్రారంభమవుతోంది...", updStBackup: "సెట్టింగ్‌లను బ్యాకప్ చేస్తోంది...", updStDownload: "నవీకరణ డౌన్‌లోడ్ అవుతోంది...", updStExtract: "ఫైల్‌లను వర్తింపజేస్తోంది...", updStInstall: "ప్యాకేజీలను నవీకరిస్తోంది...", updStRestart: "సేవలను పునఃప్రారంభిస్తోంది...", updStDone: "v{ver} కి నవీకరించబడింది", updStErr: "నవీకరణ విఫలమైంది",
   },
   ml: {
     uiLangLabel: 'ഇന്റർഫേസ് ഭാഷ', uiLangAuto: 'സ്വയം (ബ്രൗസർ)',
@@ -1326,6 +1351,7 @@ const BASE_I18N = {
     saveBtn: 'ക്രമീകരണങ്ങൾ സേവ് ചെയ്യുക', copyBtn: 'ലിങ്ക് പകർത്തുക', stremioBtn: 'Stremio / AIOStreams ൽ തുറക്കുക',
     stSaved: 'സേവ് ചെയ്തു · Nuvio യിൽ ↻ പുതുക്കുക അമർത്തുക', stSaveErr: 'സേവ് പരാജയപ്പെട്ടു',
     stSavedCopied: 'സേവ് ചെയ്ത് പകർത്തി', stCopied: 'പകർത്തി', stSelectCopy: 'ലിങ്ക് തിരഞ്ഞെടുത്ത് പകർത്തുക',
+    updChecking: "അപ്‌ഡേറ്റുകൾ പരിശോധിക്കുന്നു...", updUpToDate: "ഏറ്റവും പുതിയത്", updAvailable: "അപ്‌ഡേറ്റ് ലഭ്യമാണ്: v{cur} → v{new}", updCheckBtn: "പരിശോധിക്കുക", updNowBtn: "അപ്‌ഡേറ്റ്", updManualBtn: "ഡൗൺലോഡ്", updRetryBtn: "വീണ്ടും ശ്രമിക്കുക", updReloadBtn: "റീലോഡ്", updCheckErr: "അപ്‌ഡേറ്റ് പരിശോധിക്കാൻ കഴിഞ്ഞില്ല", updStStarting: "അപ്‌ഡേറ്റ് ആരംഭിക്കുന്നു...", updStBackup: "ക്രമീകരണങ്ങൾ ബാക്കപ്പ് ചെയ്യുന്നു...", updStDownload: "അപ്‌ഡേറ്റ് ഡൗൺലോഡ് ചെയ്യുന്നു...", updStExtract: "ഫയലുകൾ ബാധകമാക്കുന്നു...", updStInstall: "പാക്കേജുകൾ അപ്‌ഡേറ്റ് ചെയ്യുന്നു...", updStRestart: "സേവനങ്ങൾ പുനരാരംഭിക്കുന്നു...", updStDone: "v{ver} ലേക്ക് അപ്‌ഡേറ്റ് ചെയ്തു", updStErr: "അപ്‌ഡേറ്റ് പരാജയപ്പെട്ടു",
   },
   kn: {
     uiLangLabel: 'ಇಂಟರ್‌ಫೇಸ್ ಭಾಷೆ', uiLangAuto: 'ಸ್ವಯಂ (ಬ್ರೌಸರ್)',
@@ -1375,6 +1401,7 @@ const BASE_I18N = {
     saveBtn: 'ಸೆಟ್ಟಿಂಗ್ಸ್ ಉಳಿಸಿ', copyBtn: 'ಲಿಂಕ್ ನಕಲಿಸಿ', stremioBtn: 'Stremio / AIOStreams ನಲ್ಲಿ ತೆರೆಯಿರಿ',
     stSaved: 'ಉಳಿಸಲಾಗಿದೆ · Nuvio ನಲ್ಲಿ ↻ ರಿಫ್ರೆಶ್ ಒತ್ತಿರಿ', stSaveErr: 'ಉಳಿಸುವಲ್ಲಿ ದೋಷ',
     stSavedCopied: 'ಉಳಿಸಿ ನಕಲಿಸಲಾಗಿದೆ', stCopied: 'ನಕಲಿಸಲಾಗಿದೆ', stSelectCopy: 'ಲಿಂಕ್ ಆಯ್ಕೆ ಮಾಡಿ ನಕಲಿಸಿ',
+    updChecking: "ಅಪ್‌ಡೇಟ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...", updUpToDate: "ನವೀಕೃತವಾಗಿದೆ", updAvailable: "ಅಪ್‌ಡೇಟ್ ಲಭ್ಯವಿದೆ: v{cur} → v{new}", updCheckBtn: "ಪರಿಶೀಲಿಸಿ", updNowBtn: "ಅಪ್‌ಡೇಟ್", updManualBtn: "ಡೌನ್‌ಲೋಡ್", updRetryBtn: "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ", updReloadBtn: "ರೀಲೋಡ್", updCheckErr: "ಅಪ್‌ಡೇಟ್ ಪರಿಶೀಲಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ", updStStarting: "ಅಪ್‌ಡೇಟ್ ಪ್ರಾರಂಭವಾಗುತ್ತಿದೆ...", updStBackup: "ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಬ್ಯಾಕಪ್ ಮಾಡಲಾಗುತ್ತಿದೆ...", updStDownload: "ಅಪ್‌ಡೇಟ್ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ...", updStExtract: "ಫೈಲ್‌ಗಳನ್ನು ಅನ್ವಯಿಸಲಾಗುತ್ತಿದೆ...", updStInstall: "ಪ್ಯಾಕೇಜ್‌ಗಳನ್ನು ನವೀಕರಿಸಲಾಗುತ್ತಿದೆ...", updStRestart: "ಸೇವೆಗಳನ್ನು ಮರುಪ್ರಾರಂಭಿಸಲಾಗುತ್ತಿದೆ...", updStDone: "v{ver} ಗೆ ನವೀಕರಿಸಲಾಗಿದೆ", updStErr: "ಅಪ್‌ಡೇಟ್ ವಿಫಲವಾಗಿದೆ",
   },
   bn: {
     uiLangLabel: 'ইন্টারফেস ভাষা', uiLangAuto: 'স্বয়ংক্রিয় (ব্রাউজার)',
@@ -1424,6 +1451,7 @@ const BASE_I18N = {
     saveBtn: 'সেটিংস সেভ করুন', copyBtn: 'লিংক কপি করুন', stremioBtn: 'Stremio / AIOStreams-এ খুলুন',
     stSaved: 'সেভ হয়েছে · Nuvio-তে ↻ রিফ্রেশ চাপুন', stSaveErr: 'সেভ ব্যর্থ হয়েছে',
     stSavedCopied: 'সেভ ও কপি হয়েছে', stCopied: 'কপি হয়েছে', stSelectCopy: 'লিংক নির্বাচন করে কপি করুন',
+    updChecking: "আপডেট যাচাই করা হচ্ছে...", updUpToDate: "হালনাগাদ আছে", updAvailable: "আপডেট উপলব্ধ: v{cur} → v{new}", updCheckBtn: "যাচাই করুন", updNowBtn: "আপডেট করুন", updManualBtn: "ডাউনলোড", updRetryBtn: "আবার চেষ্টা করুন", updReloadBtn: "রিলোড", updCheckErr: "আপডেট যাচাই করা যায়নি", updStStarting: "আপডেট শুরু হচ্ছে...", updStBackup: "সেটিংস ব্যাকআপ হচ্ছে...", updStDownload: "আপডেট ডাউনলোড হচ্ছে...", updStExtract: "ফাইল প্রয়োগ করা হচ্ছে...", updStInstall: "প্যাকেজ আপডেট হচ্ছে...", updStRestart: "সার্ভিস রিস্টার্ট হচ্ছে...", updStDone: "v{ver} সংস্করণে আপডেট হয়েছে", updStErr: "আপডেট ব্যর্থ হয়েছে",
   },
   mr: {
     uiLangLabel: 'इंटरफेस भाषा', uiLangAuto: 'स्वयंचलित (ब्राउझर)',
@@ -1473,6 +1501,7 @@ const BASE_I18N = {
     saveBtn: 'सेटिंग्ज जतन करा', copyBtn: 'लिंक कॉपी करा', stremioBtn: 'Stremio / AIOStreams मध्ये उघडा',
     stSaved: 'जतन झाले · Nuvio मध्ये ↻ रिफ्रेश दाबा', stSaveErr: 'जतन करण्यात त्रुटी',
     stSavedCopied: 'जतन आणि कॉपी झाले', stCopied: 'कॉपी झाले', stSelectCopy: 'लिंक निवडून कॉपी करा',
+    updChecking: "अपडेट तपासत आहे...", updUpToDate: "अद्ययावत", updAvailable: "नवीन अपडेट उपलब्ध: v{cur} → v{new}", updCheckBtn: "तपासा", updNowBtn: "अपडेट करा", updManualBtn: "डाउनलोड", updRetryBtn: "पुन्हा प्रयत्न करा", updReloadBtn: "रीलोड", updCheckErr: "अपडेट तपासता आले नाही", updStStarting: "अपडेट सुरू होत आहे...", updStBackup: "सेटिंग्ज बॅकअप होत आहेत...", updStDownload: "अपडेट डाउनलोड होत आहे...", updStExtract: "फाइल्स लागू होत आहेत...", updStInstall: "पॅकेजेस अपडेट होत आहेत...", updStRestart: "सेवा रीस्टार्ट होत आहेत...", updStDone: "v{ver} वर अपडेट झाले", updStErr: "अपडेट अयशस्वी",
   },
   gu: {
     uiLangLabel: 'ઇન્ટરફેસ ભાષા', uiLangAuto: 'આપોઆપ (બ્રાઉઝર)',
@@ -1522,6 +1551,7 @@ const BASE_I18N = {
     saveBtn: 'સેટિંગ્સ સાચવો', copyBtn: 'લિંક કોપી કરો', stremioBtn: 'Stremio / AIOStreams માં ખોલો',
     stSaved: 'સાચવ્યું · Nuvio માં ↻ રિફ્રેશ દબાવો', stSaveErr: 'સાચવવામાં ભૂલ',
     stSavedCopied: 'સાચવ્યું અને કોપી થયું', stCopied: 'કોપી થયું', stSelectCopy: 'લિંક પસંદ કરીને કોપી કરો',
+    updChecking: "અપડેટ તપાસી રહ્યું છે...", updUpToDate: "અપ ટુ ડેટ", updAvailable: "નવું અપડેટ ઉપલબ્ધ છે: v{cur} → v{new}", updCheckBtn: "તપાસો", updNowBtn: "અપડેટ કરો", updManualBtn: "ડાઉનલોડ", updRetryBtn: "ફરી પ્રયાસ કરો", updReloadBtn: "રીલોડ", updCheckErr: "અપડેટ તપાસી શકાયું નથી", updStStarting: "અપડેટ શરૂ થઈ રહ્યું છે...", updStBackup: "સેટિંગ્સ બેકઅપ થઈ રહ્યાં છે...", updStDownload: "અપડેટ ડાઉનલોડ થઈ રહ્યું છે...", updStExtract: "ફાઇલો લાગુ થઈ રહી છે...", updStInstall: "પેકેજો અપડેટ થઈ રહ્યાં છે...", updStRestart: "સેવાઓ ફરી શરૂ થઈ રહી છે...", updStDone: "v{ver} પર અપડેટ થયું", updStErr: "અપડેટ નિષ્ફળ ગયું",
   },
   pa: {
     uiLangLabel: 'ਇੰਟਰਫੇਸ ਭਾਸ਼ਾ', uiLangAuto: 'ਆਟੋਮੈਟਿਕ (ਬ੍ਰਾਊਜ਼ਰ)',
@@ -1571,6 +1601,7 @@ const BASE_I18N = {
     saveBtn: 'ਸੈਟਿੰਗਾਂ ਸੇਵ ਕਰੋ', copyBtn: 'ਲਿੰਕ ਕਾਪੀ ਕਰੋ', stremioBtn: 'Stremio / AIOStreams ਵਿੱਚ ਖੋਲ੍ਹੋ',
     stSaved: 'ਸੇਵ ਹੋ ਗਿਆ · Nuvio ਵਿੱਚ ↻ ਰਿਫ੍ਰੈਸ਼ ਦਬਾਓ', stSaveErr: 'ਸੇਵ ਕਰਨ ਵਿੱਚ ਗਲਤੀ',
     stSavedCopied: 'ਸੇਵ ਅਤੇ ਕਾਪੀ ਹੋ ਗਿਆ', stCopied: 'ਕਾਪੀ ਹੋ ਗਿਆ', stSelectCopy: 'ਲਿੰਕ ਚੁਣ ਕੇ ਕਾਪੀ ਕਰੋ',
+    updChecking: "ਅੱਪਡੇਟ ਜਾਂਚੇ ਜਾ ਰਹੇ ਹਨ...", updUpToDate: "ਅੱਪ ਟੂ ਡੇਟ", updAvailable: "ਨਵਾਂ ਅੱਪਡੇਟ ਉਪਲਬਧ: v{cur} → v{new}", updCheckBtn: "ਜਾਂਚੋ", updNowBtn: "ਅੱਪਡੇਟ ਕਰੋ", updManualBtn: "ਡਾਊਨਲੋਡ", updRetryBtn: "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼", updReloadBtn: "ਰੀਲੋਡ", updCheckErr: "ਅੱਪਡੇਟ ਜਾਂਚਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ", updStStarting: "ਅੱਪਡੇਟ ਸ਼ੁਰੂ ਹੋ ਰਿਹਾ ਹੈ...", updStBackup: "ਸੈਟਿੰਗਾਂ ਬੈਕਅੱਪ ਹੋ ਰਹੀਆਂ ਹਨ...", updStDownload: "ਅੱਪਡੇਟ ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...", updStExtract: "ਫਾਈਲਾਂ ਲਾਗੂ ਹੋ ਰਹੀਆਂ ਹਨ...", updStInstall: "ਪੈਕੇਜ ਅੱਪਡੇਟ ਹੋ ਰਹੇ ਹਨ...", updStRestart: "ਸੇਵਾਵਾਂ ਮੁੜ-ਸ਼ੁਰੂ ਹੋ ਰਹੀਆਂ ਹਨ...", updStDone: "v{ver} ਤੇ ਅੱਪਡੇਟ ਹੋ ਗਿਆ", updStErr: "ਅੱਪਡੇਟ ਅਸਫਲ ਰਿਹਾ",
   },
   ja: {
     uiLangLabel: '表示言語', uiLangAuto: '自動（ブラウザ）',
@@ -1620,6 +1651,7 @@ const BASE_I18N = {
     saveBtn: '設定を保存', copyBtn: 'リンクをコピー', stremioBtn: 'Stremio / AIOStreams で開く',
     stSaved: '保存しました · Nuvio で ↻ 更新 を押してください', stSaveErr: '保存に失敗しました',
     stSavedCopied: '保存してコピーしました', stCopied: 'コピーしました', stSelectCopy: 'リンクを選択してコピーしてください',
+    updChecking: "アップデートを確認中...", updUpToDate: "最新です", updAvailable: "アップデートあり: v{cur} → v{new}", updCheckBtn: "確認", updNowBtn: "更新", updManualBtn: "ダウンロード", updRetryBtn: "再試行", updReloadBtn: "再読み込み", updCheckErr: "アップデートを確認できませんでした", updStStarting: "更新を開始しています...", updStBackup: "設定をバックアップ中...", updStDownload: "更新をダウンロード中...", updStExtract: "ファイルを適用中...", updStInstall: "パッケージを更新中...", updStRestart: "サービスを再起動中...", updStDone: "v{ver} に更新しました", updStErr: "更新に失敗しました",
   },
   ko: {
     uiLangLabel: '인터페이스 언어', uiLangAuto: '자동 (브라우저)',
@@ -1669,6 +1701,7 @@ const BASE_I18N = {
     saveBtn: '설정 저장', copyBtn: '링크 복사', stremioBtn: 'Stremio / AIOStreams에서 열기',
     stSaved: '저장됨 · Nuvio에서 ↻ 새로고침을 누르세요', stSaveErr: '저장 실패',
     stSavedCopied: '저장 및 복사됨', stCopied: '복사됨', stSelectCopy: '링크를 선택해 복사하세요',
+    updChecking: "업데이트 확인 중...", updUpToDate: "최신 버전", updAvailable: "업데이트 가능: v{cur} → v{new}", updCheckBtn: "확인", updNowBtn: "업데이트", updManualBtn: "다운로드", updRetryBtn: "다시 시도", updReloadBtn: "새로고침", updCheckErr: "업데이트를 확인할 수 없습니다", updStStarting: "업데이트 시작 중...", updStBackup: "설정 백업 중...", updStDownload: "업데이트 다운로드 중...", updStExtract: "파일 적용 중...", updStInstall: "패키지 업데이트 중...", updStRestart: "서비스 재시작 중...", updStDone: "v{ver} 버전으로 업데이트됨", updStErr: "업데이트 실패",
   },
   zh: {
     uiLangLabel: '界面语言', uiLangAuto: '自动（浏览器）',
@@ -1718,6 +1751,7 @@ const BASE_I18N = {
     saveBtn: '保存设置', copyBtn: '复制链接', stremioBtn: '在 Stremio / AIOStreams 中打开',
     stSaved: '已保存 · 请在 Nuvio 中点击 ↻ 刷新', stSaveErr: '保存失败',
     stSavedCopied: '已保存并复制', stCopied: '已复制', stSelectCopy: '请选中并复制链接',
+    updChecking: "正在检查更新...", updUpToDate: "已是最新", updAvailable: "发现新版本：v{cur} → v{new}", updCheckBtn: "检查", updNowBtn: "立即更新", updManualBtn: "下载", updRetryBtn: "重试", updReloadBtn: "刷新", updCheckErr: "无法检查更新", updStStarting: "正在启动更新...", updStBackup: "正在备份设置...", updStDownload: "正在下载更新...", updStExtract: "正在应用文件...", updStInstall: "正在更新依赖...", updStRestart: "正在重启服务...", updStDone: "已更新至 v{ver}", updStErr: "更新失败",
   },
   zh_tw: {
     uiLangLabel: '介面語言', uiLangAuto: '自動（瀏覽器）',
@@ -1767,6 +1801,7 @@ const BASE_I18N = {
     saveBtn: '儲存設定', copyBtn: '複製連結', stremioBtn: '在 Stremio / AIOStreams 開啟',
     stSaved: '已儲存 · 請在 Nuvio 按下 ↻ 重新整理', stSaveErr: '儲存失敗',
     stSavedCopied: '已儲存並複製', stCopied: '已複製', stSelectCopy: '請選取並複製連結',
+    updChecking: "正在檢查更新...", updUpToDate: "已是最新", updAvailable: "有可用更新：v{cur} → v{new}", updCheckBtn: "檢查", updNowBtn: "立即更新", updManualBtn: "下載", updRetryBtn: "重試", updReloadBtn: "重新整理", updCheckErr: "無法檢查更新", updStStarting: "正在啟動更新...", updStBackup: "正在備份設定...", updStDownload: "正在下載更新...", updStExtract: "正在套用檔案...", updStInstall: "正在更新套件...", updStRestart: "正在重新啟動服務...", updStDone: "已更新至 v{ver}", updStErr: "更新失敗",
   },
   yue: {
     uiLangLabel: '介面語言', uiLangAuto: '自動（瀏覽器）',
@@ -1816,6 +1851,7 @@ const BASE_I18N = {
     saveBtn: '儲存設定', copyBtn: '複製連結', stremioBtn: '喺 Stremio / AIOStreams 開啟',
     stSaved: '已儲存 · 喺 Nuvio 撳 ↻ 重新整理', stSaveErr: '儲存失敗',
     stSavedCopied: '已儲存同複製', stCopied: '已複製', stSelectCopy: '揀選條連結再複製',
+    updChecking: "檢查緊更新...", updUpToDate: "已經係最新", updAvailable: "有新版本：v{cur} → v{new}", updCheckBtn: "檢查", updNowBtn: "即刻更新", updManualBtn: "下載", updRetryBtn: "再試", updReloadBtn: "重新載入", updCheckErr: "檢查唔到更新", updStStarting: "開始更新緊...", updStBackup: "備份緊設定...", updStDownload: "下載緊更新...", updStExtract: "套用緊檔案...", updStInstall: "更新緊套件...", updStRestart: "重新啟動緊服務...", updStDone: "已更新到 v{ver}", updStErr: "更新失敗",
   },
   th: {
     uiLangLabel: 'ภาษาของอินเทอร์เฟซ', uiLangAuto: 'อัตโนมัติ (เบราว์เซอร์)',
@@ -1865,6 +1901,7 @@ const BASE_I18N = {
     saveBtn: 'บันทึกการตั้งค่า', copyBtn: 'คัดลอกลิงก์', stremioBtn: 'เปิดใน Stremio / AIOStreams',
     stSaved: 'บันทึกแล้ว · กด ↻ รีเฟรช ใน Nuvio', stSaveErr: 'บันทึกไม่สำเร็จ',
     stSavedCopied: 'บันทึกและคัดลอกแล้ว', stCopied: 'คัดลอกแล้ว', stSelectCopy: 'เลือกและคัดลอกลิงก์',
+    updChecking: "กำลังตรวจสอบอัปเดต...", updUpToDate: "เป็นเวอร์ชันล่าสุดแล้ว", updAvailable: "มีอัปเดตใหม่: v{cur} → v{new}", updCheckBtn: "ตรวจสอบ", updNowBtn: "อัปเดต", updManualBtn: "ดาวน์โหลด", updRetryBtn: "ลองใหม่", updReloadBtn: "รีโหลด", updCheckErr: "ไม่สามารถตรวจสอบอัปเดตได้", updStStarting: "กำลังเริ่มอัปเดต...", updStBackup: "กำลังสำรองการตั้งค่า...", updStDownload: "กำลังดาวน์โหลดอัปเดต...", updStExtract: "กำลังติดตั้งไฟล์...", updStInstall: "กำลังอัปเดตแพ็กเกจ...", updStRestart: "กำลังรีสตาร์ตบริการ...", updStDone: "อัปเดตเป็น v{ver} แล้ว", updStErr: "อัปเดตไม่สำเร็จ",
   },
   vi: {
     uiLangLabel: 'Ngôn ngữ giao diện', uiLangAuto: 'Tự động (Trình duyệt)',
@@ -1914,6 +1951,7 @@ const BASE_I18N = {
     saveBtn: 'Lưu cài đặt', copyBtn: 'Sao chép liên kết', stremioBtn: 'Mở trong Stremio / AIOStreams',
     stSaved: 'Đã lưu · Nhấn ↻ Làm mới trong Nuvio', stSaveErr: 'Lưu thất bại',
     stSavedCopied: 'Đã lưu và sao chép', stCopied: 'Đã sao chép', stSelectCopy: 'Chọn và sao chép liên kết',
+    updChecking: "Đang kiểm tra cập nhật...", updUpToDate: "Đã mới nhất", updAvailable: "Có bản cập nhật: v{cur} → v{new}", updCheckBtn: "Kiểm tra", updNowBtn: "Cập nhật", updManualBtn: "Tải xuống", updRetryBtn: "Thử lại", updReloadBtn: "Tải lại", updCheckErr: "Không thể kiểm tra cập nhật", updStStarting: "Đang bắt đầu cập nhật...", updStBackup: "Đang sao lưu cài đặt...", updStDownload: "Đang tải bản cập nhật...", updStExtract: "Đang áp dụng tệp...", updStInstall: "Đang cập nhật gói...", updStRestart: "Đang khởi động lại dịch vụ...", updStDone: "Đã cập nhật lên v{ver}", updStErr: "Cập nhật thất bại",
   },
   id: {
     uiLangLabel: 'Bahasa antarmuka', uiLangAuto: 'Otomatis (Browser)',
@@ -1963,6 +2001,7 @@ const BASE_I18N = {
     saveBtn: 'Simpan Pengaturan', copyBtn: 'Salin Tautan', stremioBtn: 'Buka di Stremio / AIOStreams',
     stSaved: 'Tersimpan · Tekan ↻ Muat ulang di Nuvio', stSaveErr: 'Gagal menyimpan',
     stSavedCopied: 'Tersimpan dan disalin', stCopied: 'Disalin', stSelectCopy: 'Pilih dan salin tautan',
+    updChecking: "Memeriksa pembaruan...", updUpToDate: "Sudah terbaru", updAvailable: "Pembaruan tersedia: v{cur} → v{new}", updCheckBtn: "Periksa", updNowBtn: "Perbarui", updManualBtn: "Unduh", updRetryBtn: "Coba lagi", updReloadBtn: "Muat ulang", updCheckErr: "Gagal memeriksa pembaruan", updStStarting: "Memulai pembaruan...", updStBackup: "Mencadangkan pengaturan...", updStDownload: "Mengunduh pembaruan...", updStExtract: "Menerapkan file...", updStInstall: "Memperbarui paket...", updStRestart: "Memulai ulang layanan...", updStDone: "Diperbarui ke v{ver}", updStErr: "Pembaruan gagal",
   },
   ms: {
     uiLangLabel: 'Bahasa antara muka', uiLangAuto: 'Automatik (Pelayar)',
@@ -2012,6 +2051,7 @@ const BASE_I18N = {
     saveBtn: 'Simpan Tetapan', copyBtn: 'Salin Pautan', stremioBtn: 'Buka dalam Stremio / AIOStreams',
     stSaved: 'Disimpan · Tekan ↻ Muat semula dalam Nuvio', stSaveErr: 'Gagal menyimpan',
     stSavedCopied: 'Disimpan dan disalin', stCopied: 'Disalin', stSelectCopy: 'Pilih dan salin pautan',
+    updChecking: "Menyemak kemas kini...", updUpToDate: "Terkini", updAvailable: "Kemas kini tersedia: v{cur} → v{new}", updCheckBtn: "Semak", updNowBtn: "Kemas kini", updManualBtn: "Muat turun", updRetryBtn: "Cuba lagi", updReloadBtn: "Muat semula", updCheckErr: "Gagal menyemak kemas kini", updStStarting: "Memulakan kemas kini...", updStBackup: "Menyandar tetapan...", updStDownload: "Memuat turun kemas kini...", updStExtract: "Menggunakan fail...", updStInstall: "Mengemas kini pakej...", updStRestart: "Memulakan semula perkhidmatan...", updStDone: "Dikemas kini ke v{ver}", updStErr: "Kemas kini gagal",
   },
   tl: {
     uiLangLabel: 'Wika ng interface', uiLangAuto: 'Awtomatiko (Browser)',
@@ -2061,6 +2101,7 @@ const BASE_I18N = {
     saveBtn: 'I-save ang Settings', copyBtn: 'Kopyahin ang Link', stremioBtn: 'Buksan sa Stremio / AIOStreams',
     stSaved: 'Na-save · Pindutin ang ↻ I-refresh sa Nuvio', stSaveErr: 'Nabigong mag-save',
     stSavedCopied: 'Na-save at nakopya', stCopied: 'Nakopya', stSelectCopy: 'Piliin at kopyahin ang link',
+    updChecking: "Sinusuri ang mga update...", updUpToDate: "Pinakabago na", updAvailable: "May bagong update: v{cur} → v{new}", updCheckBtn: "Suriin", updNowBtn: "I-update", updManualBtn: "I-download", updRetryBtn: "Subukan muli", updReloadBtn: "I-reload", updCheckErr: "Hindi masuri ang update", updStStarting: "Sinisimulan ang update...", updStBackup: "Bina-backup ang mga setting...", updStDownload: "Dina-download ang update...", updStExtract: "Inilalapat ang mga file...", updStInstall: "Ina-update ang mga package...", updStRestart: "Nire-restart ang mga serbisyo...", updStDone: "Na-update sa v{ver}", updStErr: "Nabigo ang update",
   },
 };
 

@@ -73,6 +73,7 @@ function flagIcon(code) {
 function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
   cfg = cfg || {};
   const hasUrlCfg = (opts && typeof opts.hasUrlCfg === 'boolean') ? opts.hasUrlCfg : Boolean(cfg && cfg.raw);
+  const appVersion = (opts && opts.appVersion) ? String(opts.appVersion).trim().replace(/^v/i, '') : '1.2.0';
   const initUiLang = resolveUiLang((opts && (opts.uiLang || opts.acceptLanguage)) || '');
   const initMeta = UI_LANG_META[initUiLang] || UI_LANG_META.en;
   const initDict = I18N[initUiLang] || I18N.en;
@@ -184,6 +185,33 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '.brand-row{display:flex;align-items:center;gap:10px}' +
     '.brand-mark{width:10px;height:10px;background:var(--primary);display:inline-block}' +
     'h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em}' +
+    '.ver-pill{font-size:11px;font-weight:500;color:var(--fg-muted);background:var(--surface-2);border:1px solid var(--border);padding:2px 7px;font-variant-numeric:tabular-nums}' +
+    '.upd-bar{background:var(--surface);border:1px solid var(--border);padding:10px 16px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;transition:border-color .15s}' +
+    '.upd-bar.is-avail,.upd-bar.is-busy{border-inline-start:3px solid var(--primary)}' +
+    '.upd-bar.is-done{border-inline-start:3px solid var(--ok)}' +
+    '.upd-bar.is-err{border-inline-start:3px solid #f31260}' +
+    '.upd-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}' +
+    '.upd-left{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--fg)}' +
+    '.upd-dot{width:7px;height:7px;background:var(--fg-muted);flex-shrink:0}' +
+    '.upd-bar.is-ok .upd-dot,.upd-bar.is-done .upd-dot{background:var(--ok)}' +
+    '.upd-bar.is-avail .upd-dot,.upd-bar.is-busy .upd-dot{background:var(--primary)}' +
+    '.upd-bar.is-err .upd-dot{background:#f31260}' +
+    '.upd-msg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.upd-act{display:flex;align-items:center;gap:10px;flex-shrink:0}' +
+    '.upd-pct{font-size:12px;font-weight:600;color:var(--primary);font-variant-numeric:tabular-nums}' +
+    '.upd-bar.is-done .upd-pct{color:var(--ok)}' +
+    '.upd-btn{height:28px;padding:0 12px;font-size:12px;font-weight:500;font-family:inherit;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:background .12s,border-color .12s}' +
+    '.upd-btn-primary{background:var(--primary);color:var(--primary-fg)}' +
+    '.upd-btn-primary:hover{background:var(--primary-hover)}' +
+    '.upd-btn-primary:disabled{opacity:.55;cursor:default}' +
+    '.upd-btn-ghost{background:var(--surface-2);color:var(--fg);border-color:var(--border-strong)}' +
+    '.upd-btn-ghost:hover{background:var(--surface-hover)}' +
+    '.upd-track{width:100%;height:6px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;position:relative}' +
+    '.upd-fill{height:100%;width:0%;background:var(--primary);transition:width .35s ease}' +
+    '.upd-bar.is-done .upd-fill{background:var(--ok)}' +
+    '.upd-bar.is-err .upd-fill{background:#f31260}' +
+    '@keyframes upd-pulse{0%,100%{opacity:1}50%{opacity:.55}}' +
+    '.upd-bar.is-busy .upd-fill{animation:upd-pulse 1.3s ease-in-out infinite}' +
     '.sub{margin:0;font-size:13px;color:var(--fg-muted)}' +
     '.panel{background:var(--surface);border:1px solid var(--border);margin-bottom:16px}' +
     '.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)}' +
@@ -350,13 +378,26 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '</style></head><body><main class="shell">' +
     '<header class="hdr">' +
       '<div class="brand">' +
-        '<div class="brand-row"><span class="brand-mark"></span><h1>Lanettirr</h1></div>' +
+        '<div class="brand-row"><span class="brand-mark"></span><h1>Lanettirr</h1><span class="ver-pill" id="verPill">v' + esc(appVersion) + '</span></div>' +
       '</div>' +
       '<label class="ui-lang-wrap">' +
         '<span class="ui-lang-lbl" data-i18n="uiLangLabel">' + esc(tr('uiLangLabel')) + '</span>' +
         '<select class="ui-lang-sel" id="uiLangSel" data-i18n-aria="uiLangLabel" aria-label="' + esc(tr('uiLangLabel')) + '">' + uiLangOptions + '</select>' +
       '</label>' +
     '</header>' +
+    '<div class="upd-bar" id="updBar">' +
+      '<div class="upd-top">' +
+        '<div class="upd-left"><span class="upd-dot"></span><span class="upd-msg" id="updMsg">' + esc(tr('updChecking')) + '</span></div>' +
+        '<div class="upd-act">' +
+          '<span class="upd-pct hidden" id="updPct">0%</span>' +
+          '<button type="button" class="link-btn hidden" id="updCheckBtn" data-i18n="updCheckBtn">' + esc(tr('updCheckBtn')) + '</button>' +
+          '<button type="button" class="upd-btn upd-btn-primary hidden" id="updNowBtn" data-i18n="updNowBtn">' + esc(tr('updNowBtn')) + '</button>' +
+          '<a class="upd-btn upd-btn-ghost hidden" id="updManualBtn" href="https://github.com/0mamiis/lanettirr" target="_blank" rel="noopener" data-i18n="updManualBtn">' + esc(tr('updManualBtn')) + '</a>' +
+          '<button type="button" class="upd-btn upd-btn-ghost hidden" id="updReloadBtn" data-i18n="updReloadBtn">' + esc(tr('updReloadBtn')) + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="upd-track hidden" id="updTrack"><div class="upd-fill" id="updFill"></div></div>' +
+    '</div>' +
     '<section class="panel">' +
       '<div class="panel-head">' +
         '<span class="panel-title" data-i18n="secLangs">' + esc(tr('secLangs')) + '</span>' +
@@ -587,7 +628,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '</main>' +
     '<script>' +
     'const ORIGIN = ' + safeScriptJson(origin) + ';' +
+    'const APP_VERSION = ' + safeScriptJson(appVersion) + ';' +
     'const HAS_URL_CFG = ' + safeScriptJson(hasUrlCfg) + ';' +
+    'const HAS_SAVED_CFG = ' + safeScriptJson(Boolean(cfg && cfg.raw)) + ';' +
     'const INIT_UI_LANG = ' + safeScriptJson(initUiLang) + ';' +
     'const UI_LANG_META = ' + safeScriptJson(UI_LANG_META) + ';' +
     'const I18N = ' + safeScriptJson(I18N) + ';' +
@@ -743,6 +786,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    el.textContent = code + " · " + b;' +
     '  });' +
     '  if (rerender) { renderAll(false); if (lastBlItems !== null) renderBlacklist(lastBlItems); }' +
+    '  if (typeof renderUpdateBar === "function") renderUpdateBar();' +
     '}' +
     'function getSortString() {' +
     '  const activeSort = sortState.filter(x => x.on);' +
@@ -1162,7 +1206,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    if (typeof uiSrc.uiLang === "string") uiLangPref = uiSrc.uiLang;' +
     '  }' +
     '} catch {}' +
-    'if (!HAS_URL_CFG) {' +
+    'if (!HAS_URL_CFG && !HAS_SAVED_CFG) {' +
     '  try {' +
     '    const raw = localStorage.getItem(STORAGE_KEY);' +
     '    if (raw) {' +
@@ -1187,6 +1231,155 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'applyUiLang(uiLangPref, false);' +
     'renderAll(false);' +
     'loadBlacklistUi();' +
+    'const verPillEl = document.getElementById("verPill");' +
+    'const updBarEl = document.getElementById("updBar");' +
+    'const updMsgEl = document.getElementById("updMsg");' +
+    'const updPctEl = document.getElementById("updPct");' +
+    'const updCheckBtn = document.getElementById("updCheckBtn");' +
+    'const updNowBtn = document.getElementById("updNowBtn");' +
+    'const updManualBtn = document.getElementById("updManualBtn");' +
+    'const updReloadBtn = document.getElementById("updReloadBtn");' +
+    'const updTrackEl = document.getElementById("updTrack");' +
+    'const updFillEl = document.getElementById("updFill");' +
+    'const updState = { mode: "checking", currentVersion: APP_VERSION, latestVersion: null, canSelfUpdate: false, repoUrl: "https://github.com/0mamiis/lanettirr", stage: "idle", percent: 0, error: "", targetVersion: null };' +
+    'let updPollTimer = null; let updReconnecting = false;' +
+    'function updStageText(stage) {' +
+    '  if (stage === "starting") return t("updStStarting");' +
+    '  if (stage === "backup") return t("updStBackup");' +
+    '  if (stage === "download") return t("updStDownload");' +
+    '  if (stage === "extract") return t("updStExtract");' +
+    '  if (stage === "install") return t("updStInstall");' +
+    '  if (stage === "restart") return t("updStRestart");' +
+    '  if (stage === "done") return tf("updStDone", { ver: updState.targetVersion || updState.currentVersion });' +
+    '  if (stage === "error") return t("updStErr");' +
+    '  return t("updStStarting");' +
+    '}' +
+    'function renderUpdateBar() {' +
+    '  if (!updBarEl) return;' +
+    '  if (verPillEl) verPillEl.textContent = "v" + updState.currentVersion;' +
+    '  updBarEl.classList.remove("is-ok", "is-avail", "is-busy", "is-done", "is-err");' +
+    '  const pct = Math.max(0, Math.min(100, Math.round(Number(updState.percent) || 0)));' +
+    '  const m = updState.mode;' +
+    '  updPctEl.classList.add("hidden");' +
+    '  updCheckBtn.classList.add("hidden");' +
+    '  updNowBtn.classList.add("hidden");' +
+    '  updManualBtn.classList.add("hidden");' +
+    '  updReloadBtn.classList.add("hidden");' +
+    '  updTrackEl.classList.add("hidden");' +
+    '  updNowBtn.disabled = false;' +
+    '  updNowBtn.textContent = t("updNowBtn");' +
+    '  updCheckBtn.textContent = t("updCheckBtn");' +
+    '  if (m === "checking") {' +
+    '    updMsgEl.textContent = t("updChecking");' +
+    '  } else if (m === "ok") {' +
+    '    updBarEl.classList.add("is-ok");' +
+    '    updMsgEl.textContent = "v" + updState.currentVersion + " · " + t("updUpToDate");' +
+    '    updCheckBtn.classList.remove("hidden");' +
+    '  } else if (m === "avail") {' +
+    '    updBarEl.classList.add("is-avail");' +
+    '    updMsgEl.textContent = tf("updAvailable", { cur: updState.currentVersion, new: updState.latestVersion || "" });' +
+    '    updCheckBtn.classList.remove("hidden");' +
+    '    if (updState.canSelfUpdate) { updNowBtn.classList.remove("hidden"); }' +
+    '    else { updManualBtn.href = updState.repoUrl || "https://github.com/0mamiis/lanettirr"; updManualBtn.classList.remove("hidden"); }' +
+    '  } else if (m === "busy") {' +
+    '    updBarEl.classList.add("is-busy");' +
+    '    updMsgEl.textContent = updStageText(updState.stage);' +
+    '    updPctEl.textContent = pct + "%";' +
+    '    updPctEl.classList.remove("hidden");' +
+    '    updTrackEl.classList.remove("hidden");' +
+    '    updFillEl.style.width = pct + "%";' +
+    '  } else if (m === "done") {' +
+    '    updBarEl.classList.add("is-done");' +
+    '    updMsgEl.textContent = tf("updStDone", { ver: updState.currentVersion });' +
+    '    updPctEl.textContent = "100%";' +
+    '    updPctEl.classList.remove("hidden");' +
+    '    updTrackEl.classList.remove("hidden");' +
+    '    updFillEl.style.width = "100%";' +
+    '    updReloadBtn.classList.remove("hidden");' +
+    '  } else if (m === "err") {' +
+    '    updBarEl.classList.add("is-err");' +
+    '    updMsgEl.textContent = updState.error ? (t("updStErr") + " · " + updState.error) : t("updCheckErr");' +
+    '    updCheckBtn.classList.remove("hidden");' +
+    '    if (updState.canSelfUpdate && updState.latestVersion) { updNowBtn.textContent = t("updRetryBtn"); updNowBtn.classList.remove("hidden"); }' +
+    '  }' +
+    '}' +
+    'async function checkForUpdateUi(force) {' +
+    '  if (updState.mode === "busy") return;' +
+    '  updState.mode = "checking"; updState.error = ""; renderUpdateBar();' +
+    '  try {' +
+    '    const r = await fetch(ORIGIN + "/api/update/check" + (force ? "?force=1" : ""), { cache: "no-store" });' +
+    '    const j = await r.json();' +
+    '    if (j.currentVersion) updState.currentVersion = j.currentVersion;' +
+    '    if (j.latestVersion) updState.latestVersion = j.latestVersion;' +
+    '    updState.canSelfUpdate = Boolean(j.canSelfUpdate);' +
+    '    if (j.repoUrl) updState.repoUrl = j.repoUrl;' +
+    '    if (!j.ok) { updState.mode = "err"; updState.error = ""; }' +
+    '    else if (j.updateAvailable) { updState.mode = "avail"; }' +
+    '    else { updState.mode = "ok"; }' +
+    '  } catch { updState.mode = "err"; updState.error = ""; }' +
+    '  renderUpdateBar();' +
+    '}' +
+    'function schedulePoll(ms, fn) { clearTimeout(updPollTimer); updPollTimer = setTimeout(fn, ms); }' +
+    'async function waitForBridgeOnline(tries) {' +
+    '  updReconnecting = true;' +
+    '  updState.mode = "busy"; updState.stage = "restart"; updState.percent = Math.max(updState.percent, 92);' +
+    '  renderUpdateBar();' +
+    '  try {' +
+    '    const r = await fetch(ORIGIN + "/health?t=" + Date.now(), { cache: "no-store" });' +
+    '    if (r.ok) { pollUpdateStatus(); return; }' +
+    '  } catch {}' +
+    '  if (tries > 60) { updReconnecting = false; updState.mode = "err"; updState.error = "Timeout"; renderUpdateBar(); return; }' +
+    '  schedulePoll(1200, () => waitForBridgeOnline(tries + 1));' +
+    '}' +
+    'async function pollUpdateStatus() {' +
+    '  try {' +
+    '    const r = await fetch(ORIGIN + "/api/update/status?t=" + Date.now(), { cache: "no-store" });' +
+    '    if (!r.ok) throw new Error("HTTP " + r.status);' +
+    '    const j = await r.json();' +
+    '    if (j.currentVersion) updState.currentVersion = j.currentVersion;' +
+    '    if (j.targetVersion) updState.targetVersion = j.targetVersion;' +
+    '    if (typeof j.canSelfUpdate === "boolean") updState.canSelfUpdate = j.canSelfUpdate;' +
+    '    if (j.running) {' +
+    '      updState.mode = "busy"; updState.stage = j.stage || "starting"; updState.percent = Math.max(updState.percent, Number(j.percent) || 5);' +
+    '      renderUpdateBar();' +
+    '      schedulePoll(900, pollUpdateStatus);' +
+    '    } else if (j.done || j.stage === "done" || updReconnecting) {' +
+    '      updReconnecting = false; updState.mode = "done"; updState.percent = 100;' +
+    '      renderUpdateBar();' +
+    '      schedulePoll(1600, () => window.location.reload());' +
+    '    } else if (j.stage === "error" || j.error) {' +
+    '      updReconnecting = false; updState.mode = "err"; updState.error = j.error || "";' +
+    '      renderUpdateBar();' +
+    '    } else {' +
+    '      checkForUpdateUi(false);' +
+    '    }' +
+    '  } catch {' +
+    '    if (updState.mode === "busy" || updReconnecting) { waitForBridgeOnline(1); }' +
+    '    else { updState.mode = "err"; updState.error = ""; renderUpdateBar(); }' +
+    '  }' +
+    '}' +
+    'async function startUpdateUi() {' +
+    '  if (updState.mode === "busy") return;' +
+    '  updReconnecting = false; updState.mode = "busy"; updState.stage = "starting"; updState.percent = 5; updState.error = "";' +
+    '  updState.targetVersion = updState.latestVersion || updState.currentVersion;' +
+    '  renderUpdateBar();' +
+    '  try {' +
+    '    const r = await fetch(ORIGIN + "/api/update/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ targetVersion: updState.latestVersion || "" }) });' +
+    '    const j = await r.json();' +
+    '    if (r.ok || r.status === 409) { schedulePoll(700, pollUpdateStatus); }' +
+    '    else { updState.mode = "err"; updState.error = (j && j.error) || ("HTTP " + r.status); renderUpdateBar(); }' +
+    '  } catch { updState.mode = "err"; updState.error = "Network"; renderUpdateBar(); }' +
+    '}' +
+    'if (updCheckBtn) updCheckBtn.addEventListener("click", () => checkForUpdateUi(true));' +
+    'if (updNowBtn) updNowBtn.addEventListener("click", startUpdateUi);' +
+    'if (updReloadBtn) updReloadBtn.addEventListener("click", () => window.location.reload());' +
+    '(async () => {' +
+    '  try {' +
+    '    const r = await fetch(ORIGIN + "/api/update/status?t=" + Date.now(), { cache: "no-store" });' +
+    '    if (r.ok) { const j = await r.json(); if (j && j.running) { updState.mode = "busy"; updState.stage = j.stage || "starting"; updState.percent = Number(j.percent) || 5; renderUpdateBar(); schedulePoll(800, pollUpdateStatus); return; } }' +
+    '  } catch {}' +
+    '  checkForUpdateUi(false);' +
+    '})();' +
     '</script></body></html>';
 }
 

@@ -65,6 +65,7 @@ Stremio veya AIOStreams üzerinden kullanmak için:
 
 - **Başlatmak için**: `baslat.bat`
 - **Durdurmak için**: `durdur.bat`
+- **Güncellemek için**: Web ayar panelindeki (`http://127.0.0.1:3001/configure`) üst çubuktan tek tıkla **Güncelle** butonuna basabilir veya klasördeki `guncelle.bat` (Windows) / `./guncelle.sh` (Linux/Termux) betiğini çalıştırabilirsiniz. Güncelleme sırasında ayarlarınız (`saved-config.json`, `blacklist.json`, `.env`) otomatik korunur.
 - **Sağlık kontrolü**: `http://127.0.0.1:3001/health`
 - **Otomatik başlatma (Windows Startup)**: Windows Başlangıç (`shell:startup`) klasörüne `scripts/start-hidden.vbs` için kısayol ekleyerek servislerin bilgisayar açıldığında pencere göstermeden arka planda başlamasını sağlayabilirsiniz.
 
