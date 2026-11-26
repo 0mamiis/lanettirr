@@ -745,7 +745,7 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  return INIT_UI_LANG || "en";' +
     '}' +
     'function t(k) { const d = I18N[activeUiLang] || I18N.en; return (d && d[k]) || I18N.en[k] || k; }' +
-    'function tf(k, vars) { return String(t(k)).replace(/\{(\w+)\}/g, (_, n) => (vars && vars[n] !== undefined ? String(vars[n]) : "")); }' +
+    'function tf(k, vars) { return String(t(k)).replace(/\\{(\\w+)\\}/g, (_, n) => (vars && vars[n] !== undefined ? String(vars[n]) : "")); }' +
     'function activeLocale() { return (UI_LANG_META[activeUiLang] && UI_LANG_META[activeUiLang].bcp47) || "en-US"; }' +
     'function locRepoName(r) { return r && r.id === "tr_nuvio" ? t("repoTrNuvio") : (r && r.name) || ""; }' +
     'function locRepoSub(r) {' +
@@ -753,9 +753,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '  if (!s) return "";' +
     '  if (s === "Dahili sağlayıcı") return t("repoBuiltinProv");' +
     '  if (s === "Çoklu-dil / Çapraz ses") return t("repoMultiLangFallback");' +
-    '  const ml = s.match(/^(\d+)\s+çoklu-dil sağlayıcı$/i);' +
+    '  const ml = s.match(/^(\\d+)\\s+çoklu-dil sağlayıcı$/i);' +
     '  if (ml) return tf("repoMultiLangProv", { n: ml[1] });' +
-    '  return s.replace(/\bkaynak\b/g, t("repoSourcesUnit"));' +
+    '  return s.replace(/\\bkaynak\\b/g, t("repoSourcesUnit"));' +
     '}' +
     'function getSortMeta() {' +
     '  return {' +
@@ -1311,9 +1311,6 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     '    }' +
     '  } catch {}' +
     '}' +
-    'applyUiLang(uiLangPref, false);' +
-    'renderAll(false);' +
-    'loadBlacklistUi();' +
     'const verPillEl = document.getElementById("verPill");' +
     'const updBarEl = document.getElementById("updBar");' +
     'const updMsgEl = document.getElementById("updMsg");' +
@@ -1463,6 +1460,9 @@ function renderConfigureHtml(origin, cfg, catalog, repoCatalog, opts = {}) {
     'if (updCheckBtn) updCheckBtn.addEventListener("click", () => checkForUpdateUi(true));' +
     'if (updNowBtn) updNowBtn.addEventListener("click", startUpdateUi);' +
     'if (updReloadBtn) updReloadBtn.addEventListener("click", () => window.location.reload());' +
+    'applyUiLang(uiLangPref, false);' +
+    'renderAll(false);' +
+    'loadBlacklistUi();' +
     '(async () => {' +
     '  try {' +
     '    const r = await fetch(ORIGIN + "/api/update/status?t=" + Date.now(), { cache: "no-store" });' +
