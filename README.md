@@ -15,6 +15,24 @@ Self-hosted, torrent-free VOD hub across **48 languages** for **Nuvio**, **Cloud
 - **48-Language Web Panel (`/configure`)**: Drag-and-drop language priority, per-repo/provider toggles, resolution caps, custom sorting (default: **Quality → Bitrate → Speed → Dub**), blacklist management, and a one-click **Update** button.
 - **Native App Integrations**: Works out of the box with **Nuvio** (+ custom 220-badge `/badges.json`), **CloudStream (CS3)** (dynamic `.cs3` packaging), and **Stremio**.
 
+## Screenshots
+
+### Nuvio Streams & Plugins
+
+| 4K HDR10 & `ffprobe` Stream Badges | Multi-Hub Streams (TR / EN / RU) |
+| :---: | :---: |
+| ![Nuvio 4K HDR10 Stream Badges](docs/screenshots/nuvio-streams-4k.png) | ![Nuvio Multi-Hub Streams](docs/screenshots/nuvio-streams-multihub.png) |
+
+![Nuvio Installed Plugins](docs/screenshots/nuvio-plugins.png)
+
+### Web Config Panel (`/configure`)
+
+| Languages, Hub Repos & Install Link | Qualities, Limits & Sorting |
+| :---: | :---: |
+| ![Languages and Install Link](docs/screenshots/configure-languages.png) | ![Qualities, Limits and Sorting](docs/screenshots/configure-sorting.png) |
+
+![Hub Order, Auto-Failover and Blacklist Management](docs/screenshots/configure-failover-blacklist.png)
+
 ## Installation
 
 ### Windows (3 Steps)
