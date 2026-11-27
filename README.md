@@ -3,6 +3,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/0mamiis/lanettirr?style=flat-square)](https://github.com/0mamiis/lanettirr/releases/latest)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](LICENSE)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Android%20(Termux)%20%7C%20Linux-2ea44f?style=flat-square)](#installation)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/FSAVeeGHe)
 
 Self-hosted, torrent-free VOD hub across **48 languages** for **Nuvio**, **CloudStream (CS3)**, and **Stremio** — featuring real `ffprobe` stream analysis, automatic failover, and custom badges.
 
@@ -93,6 +94,10 @@ User data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatic
 - **Incomplete setup**: Re-run `kur.bat` (or the Termux install command); it skips existing files and installs anything missing.
 
 </details>
+
+## Community
+
+Join our Discord server for updates, support, and discussion: [discord.gg/FSAVeeGHe](https://discord.gg/FSAVeeGHe)
 
 ## Support / Donate
 
