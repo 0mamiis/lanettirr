@@ -287,7 +287,7 @@ if ((-not $NoLoops) -and ($watchSpecs.Count -gt 0)) {
         $tracked.Remove($existingWd) | Out-Null
     }
     $specFile = Join-Path $RuntimeDir 'watchdog-specs.json'
-    (ConvertTo-Json -InputObject @($watchSpecs) -Depth 4) | Set-Content -LiteralPath $specFile -Encoding UTF8
+    (ConvertTo-Json -InputObject ($watchSpecs.ToArray()) -Depth 4) | Set-Content -LiteralPath $specFile -Encoding UTF8
     $wdScript = Join-Path $RuntimeDir 'watchdog-all.ps1'
     $wdBody = @'
 param([string]$SpecFile, [string]$PidFile)
