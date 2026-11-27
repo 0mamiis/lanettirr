@@ -100,7 +100,7 @@ if ($nodeCmd) {
     $nodeExe = 'C:\Program Files\nodejs\node.exe'
 }
 if (-not $nodeExe) {
-    throw 'node.exe bulunamadi. Once kur.bat dosyasini calistirin.'
+    throw 'node.exe not found. Run install.bat first.'
 }
 
 function Test-TcpPort {
@@ -362,11 +362,11 @@ $stateObj = [ordered]@{
 Write-Host ''
 Write-Host '=== Servis Durumu ===' -ForegroundColor Cyan
 $rows = @(
-    [PSCustomObject]@{ Servis = 'cs-host';        Port = $bbP;     Durum = $(if ($csOk) { 'HAZIR' } else { 'BEKLIYOR' }) },
-    [PSCustomObject]@{ Servis = 'egress';         Port = $egressP; Durum = $(if ($egOk) { 'HAZIR' } else { 'BEKLIYOR' }) },
-    [PSCustomObject]@{ Servis = 'kraptor-bridge'; Port = $bridgeP; Durum = $(if ($brOk) { 'HAZIR' } else { 'BEKLIYOR' }) },
-    [PSCustomObject]@{ Servis = 'trhub';          Port = $hubP;    Durum = $(if ($hubOk) { 'HAZIR' } else { 'BEKLIYOR' }) },
-    [PSCustomObject]@{ Servis = 'mega-bridge';    Port = $megaP;   Durum = $(if ($megaOk) { 'HAZIR' } else { 'BEKLIYOR' }) }
+    [PSCustomObject]@{ Service = 'cs-host';        Port = $bbP;     Status = $(if ($csOk) { 'READY' } else { 'WAITING' }) },
+    [PSCustomObject]@{ Service = 'egress';         Port = $egressP; Status = $(if ($egOk) { 'READY' } else { 'WAITING' }) },
+    [PSCustomObject]@{ Service = 'kraptor-bridge'; Port = $bridgeP; Status = $(if ($brOk) { 'READY' } else { 'WAITING' }) },
+    [PSCustomObject]@{ Service = 'trhub';          Port = $hubP;    Status = $(if ($hubOk) { 'READY' } else { 'WAITING' }) },
+    [PSCustomObject]@{ Service = 'mega-bridge';    Port = $megaP;   Status = $(if ($megaOk) { 'READY' } else { 'WAITING' }) }
 )
 $rows | Format-Table -AutoSize | Out-String | Write-Host
 Write-Host 'Nuvio Desktop Linkleri:' -ForegroundColor Green

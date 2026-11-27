@@ -159,7 +159,7 @@ else
       if [ -f "$SRC_ROOT/mega-bridge/$f" ]; then copy_atomic "$SRC_ROOT/mega-bridge/$f" "$ROOT/$f"; fi
     done
     if [ -f "$SRC_ROOT/mega-bridge/cs3/classes.dex" ]; then copy_atomic "$SRC_ROOT/mega-bridge/cs3/classes.dex" "$ROOT/cs3/classes.dex"; fi
-    if [ -f "$SRC_ROOT/guncelle.sh" ]; then copy_atomic "$SRC_ROOT/guncelle.sh" "$ROOT/guncelle.sh" && chmod +x "$ROOT/guncelle.sh"; fi
+    if [ -f "$SRC_ROOT/update.sh" ]; then copy_atomic "$SRC_ROOT/update.sh" "$ROOT/update.sh" && chmod +x "$ROOT/update.sh"; fi
   else
     (cd "$SRC_ROOT" && find . -type f) | while IFS= read -r rel; do
       clean="${rel#./}"
@@ -169,7 +169,7 @@ else
       mkdir -p "$ROOT/$(dirname "$clean")"
       copy_atomic "$SRC_ROOT/$clean" "$ROOT/$clean"
     done
-    for sf in guncelle.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
+    for sf in update.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
       if [ -f "$ROOT/$sf" ]; then chmod +x "$ROOT/$sf"; fi
     done
   fi
@@ -182,7 +182,7 @@ for rel in .env mega-bridge/saved-config.json mega-bridge/blacklist.json saved-c
   fi
 done
 
-for sf in guncelle.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
+for sf in update.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
   if [ -f "$ROOT/$sf" ]; then
     sed -i 's/\r$//' "$ROOT/$sf" 2>/dev/null || true
     chmod +x "$ROOT/$sf"
@@ -222,6 +222,14 @@ fi
 EOF
     chmod +x "$HOME/.shortcuts/Lanettirr-"* 2>/dev/null || true
     if command -v termux-fix-shebang >/dev/null 2>&1; then termux-fix-shebang "$HOME/.shortcuts/Lanettirr-"* >/dev/null 2>&1 || true; fi
+  fi
+  if [ -f "$HOME/.shortcuts/Lanettirr-Update" ] && [ -f "$ROOT/update.sh" ]; then
+    cat > "$HOME/.shortcuts/Lanettirr-Update" <<EOF
+#!/usr/bin/env bash
+"$ROOT/update.sh"
+EOF
+    chmod +x "$HOME/.shortcuts/Lanettirr-Update" 2>/dev/null || true
+    if command -v termux-fix-shebang >/dev/null 2>&1; then termux-fix-shebang "$HOME/.shortcuts/Lanettirr-Update" >/dev/null 2>&1 || true; fi
   fi
 fi
 

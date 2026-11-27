@@ -38,8 +38,8 @@ Self-hosted, torrent-free VOD hub across **48 languages** for **Nuvio**, **Cloud
 ### Windows (3 Steps)
 
 1. Click **Code → Download ZIP** (or clone this repo) and extract it to a folder.
-2. Run `kur.bat` to automatically install Node.js, Java 21, FFmpeg/`ffprobe`, npm packages, and `cs-host-deps.zip`.
-3. Run `baslat.bat` and wait until all services report ready (`HAZIR`).
+2. Run `install.bat` to automatically install Node.js, Java 21, FFmpeg/`ffprobe`, npm packages, and `cs-host-deps.zip`.
+3. Run `start.bat` and wait until all services report ready (`READY`).
 
 > If Windows SmartScreen warns you on `.bat` files, click **More info → Run anyway**.
 
@@ -87,10 +87,10 @@ Add `http://127.0.0.1:17410/saved/manifest.json` as a custom addon URL in Stremi
 
 | Action | Windows | Android (Termux) / Linux |
 | :--- | :--- | :--- |
-| **Start** | `baslat.bat` | `lanettirr-start` or `./start.sh` |
-| **Stop** | `durdur.bat` | `lanettirr-stop` or `./stop.sh` |
-| **Config UI** | `ayarlar.bat` | `lanettirr-config` or `Lanettirr-Config` widget |
-| **Update** | `guncelle.bat` or UI **Update** button | `lanettirr-update`, `./guncelle.sh`, or UI **Update** button |
+| **Start** | `start.bat` | `lanettirr-start` or `./start.sh` |
+| **Stop** | `stop.bat` | `lanettirr-stop` or `./stop.sh` |
+| **Config UI** | `configure.bat` | `lanettirr-config` or `Lanettirr-Config` widget |
+| **Update** | `update.bat` or UI **Update** button | `lanettirr-update`, `./update.sh`, or UI **Update** button |
 
 User data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates. To start silently on Windows login, place a shortcut to `scripts/start-hidden.vbs` in `shell:startup`.
 
@@ -98,7 +98,7 @@ User data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatic
 <summary><strong>Optional: Remote Access via Cloudflare Tunnel</strong></summary>
 
 1. Copy `.env.example` to `.env` and set `ENABLE_TUNNEL=1`.
-2. Install `cloudflared` (Windows: `winget install Cloudflare.cloudflared`) and restart with `baslat.bat`.
+2. Install `cloudflared` (Windows: `winget install Cloudflare.cloudflared`) and restart with `start.bat`.
 3. Read the generated URL from `.runtime/tunnel-url.txt`. All endpoints (`/configure`, `/saved/nuvio-repo/manifest.json`, `/saved/cs3/repo.json`, `/saved/manifest.json`, `/badges.json`) work over the tunnel URL.
 
 </details>
@@ -106,10 +106,10 @@ User data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatic
 <details>
 <summary><strong>Troubleshooting</strong></summary>
 
-- **No streams showing**: Check `http://127.0.0.1:17410/health`. After config changes or updates, restart services (`durdur.bat` then `baslat.bat`) and refresh plugins.
-- **Missing Mbps or codec badges**: Ensure `ffprobe` is installed (re-run `kur.bat`, or set `FFPROBE_PATH` / `MEGA_FFPROBE` in `.env`).
-- **Port conflict (`7100` or `17410`)**: Run `durdur.bat` (or `./stop.sh`) first to clear leftover processes, then start again.
-- **Incomplete setup**: Re-run `kur.bat` (or the Termux install command); it skips existing files and installs anything missing.
+- **No streams showing**: Check `http://127.0.0.1:17410/health`. After config changes or updates, restart services (`stop.bat` then `start.bat`) and refresh plugins.
+- **Missing Mbps or codec badges**: Ensure `ffprobe` is installed (re-run `install.bat`, or set `FFPROBE_PATH` / `MEGA_FFPROBE` in `.env`).
+- **Port conflict (`7100` or `17410`)**: Run `stop.bat` (or `./stop.sh`) first to clear leftover processes, then start again.
+- **Incomplete setup**: Re-run `install.bat` (or the Termux install command); it skips existing files and installs anything missing.
 
 </details>
 

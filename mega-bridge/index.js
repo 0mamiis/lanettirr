@@ -4258,6 +4258,8 @@ function resolveUpdaterScript() {
     }
   } else {
     const cands = [
+      { scriptPath: path.join(__dirname, "..", "update.sh"), rootDir: path.join(__dirname, "..") },
+      { scriptPath: path.join(__dirname, "update.sh"), rootDir: __dirname },
       { scriptPath: path.join(__dirname, "..", "guncelle.sh"), rootDir: path.join(__dirname, "..") },
       { scriptPath: path.join(__dirname, "guncelle.sh"), rootDir: __dirname },
     ];

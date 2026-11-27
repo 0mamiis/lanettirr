@@ -157,7 +157,7 @@ function Install-WithWinget {
     param([string]$PackageId, [string]$Label)
     $wg = Get-Command winget.exe -ErrorAction SilentlyContinue
     if (-not $wg) {
-        throw ($Label + ' eksik ve winget bulunamadi. Lutfen manuel kurup kur.bat dosyasini yeniden calistirin.')
+        throw ($Label + ' is missing and winget was not found. Please install it manually and re-run install.bat.')
     }
     Write-Host ('[winget] ' + $Label + ' kuruluyor (' + $PackageId + ')...') -ForegroundColor Yellow
     $prevEap = $ErrorActionPreference
@@ -183,7 +183,7 @@ function Install-NpmDir {
         $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
     }
     if (-not $npmCmd) {
-        throw 'npm bulunamadi. Node.js kurulumundan sonra yeni bir pencere acip kur.bat calistirin.'
+        throw 'npm not found. After installing Node.js, open a new window and run install.bat.'
     }
     $lockFile = Join-Path $DirPath 'package-lock.json'
     Push-Location -LiteralPath $DirPath
@@ -351,7 +351,7 @@ if ($makeShortcut) {
 
 Write-Host ''
 Write-Host '=== Kurulum Tamamlandi! ===' -ForegroundColor Green
-Write-Host 'Simdi baslat.bat dosyasini calistirin ve tarayicida ayar panelini acin:'
+Write-Host 'Now run start.bat and open the config panel in your browser:'
 Write-Host '  Ayar Paneli    : http://127.0.0.1:17410/configure'
 Write-Host '  Nuvio Repo     : http://127.0.0.1:17410/saved/nuvio-repo/manifest.json'
 Write-Host '  CloudStream 3  : http://127.0.0.1:17410/saved/cs3/repo.json'

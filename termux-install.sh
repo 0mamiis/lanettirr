@@ -97,7 +97,7 @@ else
 fi
 
 echo "[5/6] Fixing script permissions & creating shortcuts..."
-for f in "$INSTALL_DIR/start.sh" "$INSTALL_DIR/stop.sh" "$INSTALL_DIR/guncelle.sh" "$INSTALL_DIR/termux-install.sh" "$INSTALL_DIR/cs-host/run-host.sh"; do
+for f in "$INSTALL_DIR/start.sh" "$INSTALL_DIR/stop.sh" "$INSTALL_DIR/update.sh" "$INSTALL_DIR/termux-install.sh" "$INSTALL_DIR/cs-host/run-host.sh"; do
   if [ -f "$f" ]; then
     sed -i 's/\r$//' "$f" 2>/dev/null || true
     chmod +x "$f"
@@ -146,7 +146,7 @@ fi
 EOF
   cat > "$HOME/.shortcuts/Lanettirr-Update" <<EOF
 #!/usr/bin/env bash
-"$INSTALL_DIR/guncelle.sh"
+"$INSTALL_DIR/update.sh"
 EOF
   chmod +x "$HOME/.shortcuts/Lanettirr-"*
   if command -v termux-fix-shebang >/dev/null 2>&1; then
