@@ -180,7 +180,7 @@ function Start-ServiceProc {
         $prevEntry = $tracked | Where-Object { $_.name -eq $Name } | Select-Object -First 1
         $prevPid = 0
         if ($prevEntry -and $prevEntry.pid) { $prevPid = [int]$prevEntry.pid }
-        $watchSpecs.Add([ordered]@{
+        $watchSpecs.Add([PSCustomObject]@{
             name = $Name
             port = $Port
             pid = $prevPid
@@ -195,7 +195,7 @@ function Start-ServiceProc {
     }
 
     $p = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
-    $watchSpecs.Add([ordered]@{
+    $watchSpecs.Add([PSCustomObject]@{
         name = $Name
         port = $Port
         pid = $p.Id
