@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+run_update() {
 REPO="${LANETTIRR_UPDATE_REPO:-0mamiis/lanettirr}"
 BRANCH="${LANETTIRR_UPDATE_BRANCH:-main}"
 FROM_UI=0
@@ -8,12 +9,17 @@ NO_RESTART=0
 SKIP_NPM=0
 STATUS_FILE=""
 TARGET_VER=""
+ROOT_OVERRIDE=""
+CLEANUP_SELF=0
+SELF_PATH="$0"
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --from-ui) FROM_UI=1; shift ;;
     --no-restart) NO_RESTART=1; shift ;;
     --skip-npm) SKIP_NPM=1; shift ;;
+    --cleanup-self) CLEANUP_SELF=1; shift ;;
+    --root) ROOT_OVERRIDE="$2"; shift 2 ;;
     --status-file) STATUS_FILE="$2"; shift 2 ;;
     --repo) REPO="$2"; shift 2 ;;
     --branch) BRANCH="$2"; shift 2 ;;
@@ -23,7 +29,11 @@ while [ $# -gt 0 ]; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$SCRIPT_DIR"
+if [ -n "$ROOT_OVERRIDE" ] && [ -d "$ROOT_OVERRIDE" ]; then
+  ROOT="$(cd "$ROOT_OVERRIDE" && pwd)"
+else
+  ROOT="$SCRIPT_DIR"
+fi
 RUNTIME_DIR="$ROOT/.runtime"
 mkdir -p "$RUNTIME_DIR"
 if [ -z "$STATUS_FILE" ]; then
@@ -46,6 +56,8 @@ CUR_VER="$(read_local_ver)"
 if [ -z "$TARGET_VER" ]; then TARGET_VER="$CUR_VER"; fi
 STARTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)"
 LAST_PCT=5
+COMPLETED=0
+ERR_WRITTEN=0
 
 write_status() {
   local running="$1" stage="$2" pct="$3" msg="$4" done="$5" err="$6"
@@ -54,9 +66,9 @@ write_status() {
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)"
   local tmp="${STATUS_FILE}.tmp.$$"
   if command -v node >/dev/null 2>&1; then
-    node -e 'const fs=require("fs");const [r,st,pc,m,dn,er,cv,tv,sa,ua,out]=process.argv.slice(1);fs.writeFileSync(out,JSON.stringify({running:r==="true",stage:st,percent:Number(pc)||0,message:m,done:dn==="true",error:er||null,currentVersion:cv,targetVersion:tv,startedAt:sa,updatedAt:ua},null,2));' "$running" "$stage" "$pct" "$msg" "$done" "$err" "$CUR_VER" "$TARGET_VER" "$STARTED_AT" "$now" "$tmp"
+    node -e 'const fs=require("fs");const [r,st,pc,m,dn,er,cv,tv,sa,ua,pid,out]=process.argv.slice(1);fs.writeFileSync(out,JSON.stringify({running:r==="true",stage:st,percent:Number(pc)||0,message:m,done:dn==="true",error:er||null,currentVersion:cv,targetVersion:tv,startedAt:sa,updatedAt:ua,pid:Number(pid)||null},null,2));' "$running" "$stage" "$pct" "$msg" "$done" "$err" "$CUR_VER" "$TARGET_VER" "$STARTED_AT" "$now" "$$" "$tmp"
   else
-    printf '{"running":%s,"stage":"%s","percent":%s,"message":"%s","done":%s,"error":%s,"currentVersion":"%s","targetVersion":"%s","startedAt":"%s","updatedAt":"%s"}\n' "$running" "$stage" "$pct" "$msg" "$done" "$([ -n "$err" ] && printf '"%s"' "$err" || printf 'null')" "$CUR_VER" "$TARGET_VER" "$STARTED_AT" "$now" > "$tmp"
+    printf '{"running":%s,"stage":"%s","percent":%s,"message":"%s","done":%s,"error":%s,"currentVersion":"%s","targetVersion":"%s","startedAt":"%s","updatedAt":"%s","pid":%s}\n' "$running" "$stage" "$pct" "$msg" "$done" "$([ -n "$err" ] && printf '"%s"' "$err" || printf 'null')" "$CUR_VER" "$TARGET_VER" "$STARTED_AT" "$now" "$$" > "$tmp"
   fi
   mv -f "$tmp" "$STATUS_FILE"
 }
@@ -66,9 +78,16 @@ say() {
 }
 
 TMP_WORK="$(mktemp -d 2>/dev/null || mktemp -d -t lanettirr-upd)"
-cleanup() { rm -rf "$TMP_WORK" 2>/dev/null || true; }
+cleanup() {
+  if [ "${COMPLETED:-0}" -eq 0 ] && [ "${ERR_WRITTEN:-0}" -eq 0 ]; then
+    write_status false "error" "$LAST_PCT" "Update interrupted" false "Updater exited unexpectedly" || true
+  fi
+  rm -rf "$TMP_WORK" 2>/dev/null || true
+  if [ "${CLEANUP_SELF:-0}" -eq 1 ] && [ -f "$SELF_PATH" ]; then rm -f "$SELF_PATH" 2>/dev/null || true; fi
+}
 on_err() {
   local code=$?
+  ERR_WRITTEN=1
   write_status false "error" "$LAST_PCT" "Update failed" false "Update exited with code $code" || true
   say "[HATA] Guncelleme basarisiz (kod: $code)"
   cleanup
@@ -129,12 +148,18 @@ else
   tar -xzf "$TAR_PATH" -C "$EXT_DIR"
   SRC_ROOT="$(find "$EXT_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
   if [ -z "$SRC_ROOT" ]; then exit 1; fi
+  copy_atomic() {
+    local src="$1" dst="$2"
+    mkdir -p "$(dirname "$dst")"
+    cp -f "$src" "${dst}.upd.$$"
+    mv -f "${dst}.upd.$$" "$dst"
+  }
   if [ "$MB_DIR" = "$ROOT" ] && [ -d "$SRC_ROOT/mega-bridge" ]; then
     for f in index.js configure-ui.js configure-i18n.js badges-custom.json lang-repos.json package.json package-lock.json VERSION; do
-      if [ -f "$SRC_ROOT/mega-bridge/$f" ]; then cp -f "$SRC_ROOT/mega-bridge/$f" "$ROOT/$f"; fi
+      if [ -f "$SRC_ROOT/mega-bridge/$f" ]; then copy_atomic "$SRC_ROOT/mega-bridge/$f" "$ROOT/$f"; fi
     done
-    if [ -f "$SRC_ROOT/mega-bridge/cs3/classes.dex" ]; then mkdir -p "$ROOT/cs3" && cp -f "$SRC_ROOT/mega-bridge/cs3/classes.dex" "$ROOT/cs3/classes.dex"; fi
-    if [ -f "$SRC_ROOT/guncelle.sh" ]; then cp -f "$SRC_ROOT/guncelle.sh" "$ROOT/guncelle.sh" && chmod +x "$ROOT/guncelle.sh"; fi
+    if [ -f "$SRC_ROOT/mega-bridge/cs3/classes.dex" ]; then copy_atomic "$SRC_ROOT/mega-bridge/cs3/classes.dex" "$ROOT/cs3/classes.dex"; fi
+    if [ -f "$SRC_ROOT/guncelle.sh" ]; then copy_atomic "$SRC_ROOT/guncelle.sh" "$ROOT/guncelle.sh" && chmod +x "$ROOT/guncelle.sh"; fi
   else
     (cd "$SRC_ROOT" && find . -type f) | while IFS= read -r rel; do
       clean="${rel#./}"
@@ -142,7 +167,7 @@ else
         .git/*|.runtime/*|node_modules/*|*/node_modules/*|.env|cloudflared.exe|mega-bridge/saved-config.json|mega-bridge/blacklist.json|saved-config.json|blacklist.json|trhub/speed.json|trhub/provstat.json|trhub/tl/*|kraptor-bridge/cache/*|kraptor-bridge/tx/*|cs-host/cache/*|cs-host/lib/*|cs-host/tools/*) continue ;;
       esac
       mkdir -p "$ROOT/$(dirname "$clean")"
-      cp -f "$SRC_ROOT/$clean" "$ROOT/$clean"
+      copy_atomic "$SRC_ROOT/$clean" "$ROOT/$clean"
     done
     for sf in guncelle.sh start.sh stop.sh termux-install.sh cs-host/run-host.sh; do
       if [ -f "$ROOT/$sf" ]; then chmod +x "$ROOT/$sf"; fi
@@ -260,5 +285,10 @@ if [ "$NO_RESTART" -eq 0 ]; then
   done
 fi
 
+COMPLETED=1
 write_status false "done" 100 "Updated to v${CUR_VER}" true ""
 say "[OK] Guncelleme tamamlandi! Aktif surum: v${CUR_VER}"
+}
+
+run_update "$@"
+exit $?

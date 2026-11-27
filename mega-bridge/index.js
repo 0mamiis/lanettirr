@@ -4290,12 +4290,32 @@ function readUpdateStatus() {
     if (!raw || typeof raw !== "object") return fallback;
     const out = Object.assign({}, fallback, raw);
     out.currentVersion = curVer;
-    if (out.running && out.updatedAt) {
-      const age = Date.now() - Date.parse(out.updatedAt);
+    if (out.running) {
+      const age = out.updatedAt ? (Date.now() - Date.parse(out.updatedAt)) : NaN;
+      let deadPid = false;
+      if (Number.isInteger(out.pid) && out.pid > 0 && (!Number.isFinite(age) || age > 5000)) {
+        try {
+          process.kill(out.pid, 0);
+        } catch (err) {
+          if (err && err.code === "ESRCH") deadPid = true;
+        }
+      }
       if (Number.isFinite(age) && age > 10 * 60 * 1000) {
         out.running = false;
         out.stage = "error";
         out.error = "Update timed out";
+      } else if (deadPid) {
+        out.running = false;
+        if (out.targetVersion && compareSemver(curVer, out.targetVersion) >= 0 && out.stage === "restart") {
+          out.stage = "done";
+          out.done = true;
+          out.percent = 100;
+          out.error = null;
+        } else {
+          out.stage = "error";
+          out.error = "Updater process stopped unexpectedly";
+        }
+        try { writeUpdateStatusFile(out); } catch {}
       }
     }
     return out;
@@ -4385,8 +4405,18 @@ function startSelfUpdate(targetVersion) {
     args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", upd.scriptPath, "-FromUi", "-StatusFile", statusFile, "-Repo", UPDATE_REPO, "-Branch", UPDATE_BRANCH];
     if (cleanTarget) args.push("-TargetVersion", cleanTarget);
   } else {
+    let runScriptPath = upd.scriptPath;
+    let cleanupSelf = false;
+    try {
+      const tmpCopy = path.join(require("os").tmpdir(), "lanettirr-guncelle-" + process.pid + "-" + Date.now() + ".sh");
+      fs.copyFileSync(upd.scriptPath, tmpCopy);
+      try { fs.chmodSync(tmpCopy, 0o755); } catch {}
+      runScriptPath = tmpCopy;
+      cleanupSelf = true;
+    } catch {}
     cmd = "bash";
-    args = [upd.scriptPath, "--from-ui", "--status-file", statusFile, "--repo", UPDATE_REPO, "--branch", UPDATE_BRANCH];
+    args = [runScriptPath, "--from-ui", "--root", upd.rootDir, "--status-file", statusFile, "--repo", UPDATE_REPO, "--branch", UPDATE_BRANCH];
+    if (cleanupSelf) args.push("--cleanup-self");
     if (cleanTarget) args.push("--target-version", cleanTarget);
   }
   try {
@@ -4394,6 +4424,10 @@ function startSelfUpdate(targetVersion) {
     delete childEnv.PORT;
     delete childEnv.MEGA_PORT;
     const child = spawn(cmd, args, { cwd: upd.rootDir, env: childEnv, detached: true, stdio: "ignore", windowsHide: true });
+    if (child && Number.isInteger(child.pid) && child.pid > 0) {
+      initStatus.pid = child.pid;
+      try { writeUpdateStatusFile(initStatus); } catch {}
+    }
     child.on("error", (err) => {
       try {
         writeUpdateStatusFile(Object.assign({}, initStatus, { running: false, stage: "error", error: String(err && err.message ? err.message : err), updatedAt: new Date().toISOString() }));
