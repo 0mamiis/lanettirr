@@ -12,7 +12,9 @@ Self-hosted, torrent-free VOD hub across **48 languages** for **Nuvio**, **Cloud
 - **48 Languages, Zero Torrents**: Combines 193+ Turkish sources, 154+ deduplicated English sources, and 125+ multi-language Nuvio & CloudStream repositories strictly focused on direct VOD streams.
 - **Real `ffprobe` Verification**: Measures actual resolution, bitrate (`Mbps`), latency (`ms`), codecs, HDR/Dolby Vision, container, and verified dub/audio tracks — displayed on clean 2-line stream cards.
 - **Auto Failover & Download Support**: Broken or timed-out sources are automatically blacklisted and skipped in real time; the proxy supports `HEAD` and `Range` (`206`) for direct downloads.
-- **48-Language Web Panel (`/configure`)**: Drag-and-drop language priority, per-repo/provider toggles, resolution caps, custom sorting (default: **Quality → Bitrate → Speed → Dub**), blacklist management, and a one-click **Update** button.
+- **48-Language Web Panel (`/configure`)**: Industrial console layout with 5 selectable color themes, drag-and-drop language priority, per-repo/provider toggles, resolution caps, custom sorting (default: **Quality → Bitrate → Speed → Dub**), blacklist management, step-by-step client install guides, and a one-click **Update** button.
+- **Catalogs, Search & Episode Metadata**: TMDB-powered (with Cinemeta fallback) home catalogs (Trending, Popular with genre filter, Top Rated, Local TR, Anime), search, and full TV season/episode metadata for Stremio & Nuvio Addons (`/saved/manifest.json`).
+- **Windows Desktop App (`Lanettirr.exe`)**: Single-executable Edge WebView2 + System Tray app that launches all services silently, embeds the full control panel inside one window, and stops all services cleanly on exit. Rebuild anytime via `build-exe.bat`.
 - **Native App Integrations**: Works out of the box with **Nuvio** (+ custom 220-badge `/badges.json`), **CloudStream (CS3)** (dynamic `.cs3` packaging), and **Stremio**.
 
 ## Screenshots
@@ -87,10 +89,11 @@ Add `http://127.0.0.1:17410/saved/manifest.json` as a custom addon URL in Stremi
 
 | Action | Windows | Android (Termux) / Linux |
 | :--- | :--- | :--- |
-| **Start** | `start.bat` | `lanettirr-start` or `./start.sh` |
-| **Stop** | `stop.bat` | `lanettirr-stop` or `./stop.sh` |
-| **Config UI** | `configure.bat` | `lanettirr-config` or `Lanettirr-Config` widget |
+| **Start** | `Lanettirr.exe` (or `start.bat`) | `lanettirr-start` or `./start.sh` |
+| **Stop** | Tray → **Kapat** (or `stop.bat`) | `lanettirr-stop` or `./stop.sh` |
+| **Config UI** | Inside `Lanettirr.exe` (or `configure.bat`) | `lanettirr-config` or `Lanettirr-Config` widget |
 | **Update** | `update.bat` or UI **Update** button | `lanettirr-update`, `./update.sh`, or UI **Update** button |
+| **Rebuild EXE** | `build-exe.bat` | — |
 
 User data (`saved-config.json`, `blacklist.json`, `.env`) is preserved automatically during updates. To start silently on Windows login, place a shortcut to `scripts/start-hidden.vbs` in `shell:startup`.
 
