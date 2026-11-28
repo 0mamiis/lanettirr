@@ -230,6 +230,8 @@ try {
         if (-not $srcRoot) { throw "Indirilen arsiv bos veya gecersiz." }
 
         $srcPrefix = $srcRoot.FullName.TrimEnd("\") + "\"
+        $oldExe = Join-Path $Root "Lanettirr.exe.old"
+        if (Test-Path -LiteralPath $oldExe) { Remove-Item -LiteralPath $oldExe -Force -ErrorAction SilentlyContinue }
         $files = Get-ChildItem -LiteralPath $srcRoot.FullName -Recurse -File
         foreach ($f in $files) {
             $rel = $f.FullName.Substring($srcPrefix.Length)
@@ -238,6 +240,9 @@ try {
             $destDir = Split-Path -Parent $dest
             if ($destDir -and (-not (Test-Path -LiteralPath $destDir))) {
                 New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+            }
+            if (($rel -ieq "Lanettirr.exe") -and (Test-Path -LiteralPath $dest)) {
+                try { Move-Item -LiteralPath $dest -Destination $oldExe -Force } catch {}
             }
             Copy-Item -LiteralPath $f.FullName -Destination $dest -Force
         }

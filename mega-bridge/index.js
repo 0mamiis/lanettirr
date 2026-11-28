@@ -762,6 +762,17 @@ const TRUSTED_TR_PROVIDERS = new Set([
   'YabancıDizi', 'LiderFilm', 'KultFilmler', 'Vidmody', 'TvDiziler', 'TR Dizi İzle',
 ]);
 
+const { createCatalogModule } = require('./catalog');
+const catalogMod = createCatalogModule({
+  tmdbKeys: TMDB_KEYS,
+  singleflight,
+  capMap,
+  runPool,
+  titleCache,
+  imdbResolveCache,
+  resolveImdbToTmdb,
+});
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let providers    = null;
 let stremioMeta  = null;
@@ -1336,10 +1347,10 @@ function buildStremioMeta(loaded) {
     name        : 'Lanettirr',
     description : `${loaded.length} providers from TR Hub + EN Hub`,
     logo        : 'https://raw.githubusercontent.com/yoruix/nuvio-providers/main/Assets/Logo-2.png',
-    resources   : ['stream'],
+    resources   : catalogMod.buildResourcesForConfig({ langs: ['tr', 'en'], catalogs: true }),
     types       : types.length ? types : ['movie','series'],
     idPrefixes  : ['tt','tmdb:'],
-    catalogs    : [],
+    catalogs    : catalogMod.buildCatalogsForConfig({ langs: ['tr', 'en'], catalogs: true }),
     behaviorHints: { configurable:false, configurationRequired:false },
   };
 }
@@ -1418,6 +1429,7 @@ function parseConfig(raw) {
     failover: false,
     failoverSec: 15,
     timeoutSec: 45,
+    catalogs: true,
     disabledRepos: [],
     disabledProvs: [],
     raw: "",
@@ -1468,10 +1480,11 @@ function parseConfig(raw) {
   const failover = p.get("fb") === "1" || p.get("fb") === "true";
   const failoverSec = clampInt(p.get("fbto"), 5, 45, 15);
   const timeoutSec = clampInt(p.get("to"), 10, 90, 45);
+  const catalogs = !(p.get("cat") === "0" || p.get("cat") === "false");
   const disabledRepos = [...new Set((p.get("off") || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean))];
   const disabledProvs = [...new Set((p.get("offp") || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean))];
   const qualSet = new Set(quals);
-  return { langs, quals, qualSet, mode, mega, no4k, qlimMode, qlimAll, qlimMap, hubLim, streamSort, sortRules, hubSort, megaPos, hubSeq, failover, failoverSec, timeoutSec, disabledRepos, disabledProvs, raw: dec };
+  return { langs, quals, qualSet, mode, mega, no4k, qlimMode, qlimAll, qlimMap, hubLim, streamSort, sortRules, hubSort, megaPos, hubSeq, failover, failoverSec, timeoutSec, catalogs, disabledRepos, disabledProvs, raw: dec };
 }
 function langKey(langs) { return [...new Set((langs && langs.length ? langs : ["tr", "en"]).map(s => s.toLowerCase()))].sort().join(","); }
 async function loadLangProviders(code) {
@@ -1743,10 +1756,12 @@ function manifestForConfig(cfg) {
   const slug = cfg.langs.slice().sort().join("_");
   const shortName = ls.length === 1 ? ("Lanettirr \u00b7 " + ls[0]) : ls.length <= 3 ? ("Lanettirr \u00b7 " + ls.join("+")) : ("Lanettirr \u00b7 " + ls.length + " Lang");
   return {
-    ...(stremioMeta || { version: getLocalVersion(), resources: ["stream"], types: ["movie", "series"], idPrefixes: ["tt", "tmdb:"], catalogs: [] }),
+    ...(stremioMeta || { version: getLocalVersion(), types: ["movie", "series"], idPrefixes: ["tt", "tmdb:"] }),
     id: "community.lanettirr." + slug + (cfg.mode === "mega" ? ".mega" : ""),
     name: shortName,
     description: "Lanettirr (" + ls.join(", ") + ") · Direct VOD streams (no torrents)",
+    resources: catalogMod.buildResourcesForConfig(cfg),
+    catalogs: catalogMod.buildCatalogsForConfig(cfg),
     behaviorHints: { configurable: true, configurationRequired: false },
   };
 }
@@ -5134,6 +5149,35 @@ const server = http.createServer(async (req, res) => {
       if (seqGate) markHubDone(seqGate, slug);
       console.error("Nuvio repo hub error:", e.message);
       json(res, 200, []);
+    }
+    return;
+  }
+
+  const catM = routeUrl.match(/^\/catalog\/(movie|series)\/([^/]+?)(?:\/(.+?))?\.json$/);
+  if (catM) {
+    try {
+      const reqUrl = new URL(req.url, origin);
+      const catalogId = decodeURIComponent(catM[2]);
+      const extra = catalogMod.parseExtra(catM[3] || "", reqUrl.searchParams);
+      const metas = await catalogMod.getCatalogMetas(catM[1], catalogId, extra, cfg);
+      json(res, 200, { metas });
+    } catch (e) {
+      console.error("Catalog error:", e.message);
+      json(res, 200, { metas: [] });
+    }
+    return;
+  }
+
+  const metaM = routeUrl.match(/^\/meta\/(movie|series)\/(.+)\.json$/);
+  if (metaM) {
+    try {
+      const metaId = decodeURIComponent(metaM[2]);
+      const meta = await catalogMod.getMetaItem(metaM[1], metaId, cfg);
+      if (!meta) { json(res, 404, { error: "Meta not found" }); return; }
+      json(res, 200, { meta });
+    } catch (e) {
+      console.error("Meta error:", e.message);
+      json(res, 404, { error: "Meta error" });
     }
     return;
   }
